@@ -5,56 +5,71 @@
         "id": 1,
         "title": "Setup Project Repository and Development Environment",
         "description": "Initialize the project repository with proper structure for both frontend and backend components, and set up the development environment.",
-        "details": "1. Create a new Git repository for the project\n2. Set up the backend directory structure as specified in the PRD\n3. Set up the frontend directory structure as specified in the PRD\n4. Configure VS Code with recommended extensions for Python, React, and TypeScript\n5. Create .gitignore files for both frontend and backend\n6. Set up Python virtual environment for backend development\n7. Initialize Node.js project for frontend development\n8. Create README.md with project overview and setup instructions\n\nTechnology recommendations:\n- Git for version control\n- Python 3.11+ for backend\n- Node.js 18+ for frontend\n- VS Code with Python, React, and TypeScript extensions",
-        "testStrategy": "Verify that the repository structure matches the PRD specifications. Ensure all development environment components can be initialized without errors. Test that the README provides clear setup instructions that new developers can follow.",
-        "priority": "high",
-        "dependencies": [],
         "status": "pending",
+        "dependencies": [],
+        "priority": "high",
+        "details": "1. Create a new Git repository for the project\n2. Set up the backend directory structure as specified in the PRD\n3. Set up the frontend directory structure as specified in the PRD\n4. Configure VS Code with recommended extensions for Python, React, and TypeScript\n5. Create .gitignore files for both frontend and backend\n6. Set up Python virtual environment for backend development\n7. Initialize Node.js project for frontend development\n8. Create README.md with project overview and setup instructions\n\nTechnology recommendations:\n- Git for version control\n- Python 3.11+ for backend\n- Node.js 18+ for frontend\n- VS Code with Python, React, and TypeScript extensions",
+        "testStrategy": "Verify that the repository structure matches the PRD specifications. Ensure all development environment components can be initialized without errors. Test that the README provides clear setup instructions that new developers can follow. Validate that the project structure follows all rules and guidelines defined in the .cursor/rules/ directory.",
         "subtasks": [
           {
             "id": 1,
             "title": "Initialize Git Repository and Project Structure",
             "description": "Create a new Git repository and establish the basic project structure for both frontend and backend components.",
+            "status": "pending",
             "dependencies": [],
             "details": "Create a new Git repository on GitHub/GitLab. Clone the repository locally. Set up the root directory structure with separate folders for frontend and backend. Create initial README.md with project overview, technology stack, and basic setup instructions.",
-            "status": "pending",
             "testStrategy": "Verify that the repository is properly initialized with the correct structure. Ensure README.md contains accurate information about the project setup."
           },
           {
             "id": 2,
             "title": "Configure Backend Environment and Structure",
             "description": "Set up the Python backend environment with virtual environment and directory structure as specified in the PRD.",
+            "status": "pending",
             "dependencies": [],
             "details": "Create a Python virtual environment using venv or conda. Set up backend directory structure with modules for routes, models, services, and utilities. Create requirements.txt with initial dependencies including FastAPI, Pydantic, SQLAlchemy, and other required packages. Configure .gitignore for Python-specific files.",
-            "status": "pending",
             "testStrategy": "Verify that the virtual environment can be activated and deactivated. Ensure all specified directories exist and follow the PRD structure. Test that requirements can be installed without conflicts."
           },
           {
             "id": 3,
             "title": "Configure Frontend Environment and Structure",
             "description": "Initialize the Node.js frontend project with the directory structure as specified in the PRD.",
+            "status": "pending",
             "dependencies": [],
             "details": "Initialize a new Node.js project using npm or yarn. Set up frontend directory structure with components, pages, services, and assets folders. Create package.json with initial dependencies for React, TypeScript, and other required packages. Configure .gitignore for Node.js-specific files.",
-            "status": "pending",
             "testStrategy": "Verify that npm/yarn commands work correctly. Ensure all specified directories exist and follow the PRD structure. Test that dependencies can be installed without conflicts."
           },
           {
             "id": 4,
             "title": "Set Up Development Tools and Extensions",
             "description": "Configure VS Code with recommended extensions and settings for Python, React, and TypeScript development.",
+            "status": "pending",
             "dependencies": [],
             "details": "Install VS Code extensions for Python, React, and TypeScript development. Create .vscode directory with settings.json, extensions.json, and launch.json files. Configure ESLint and Prettier for code formatting and linting. Set up editor-specific settings for consistent development experience.",
-            "status": "pending",
             "testStrategy": "Verify that VS Code loads all recommended extensions. Test that code formatting and linting work correctly. Ensure debugging configurations work for both frontend and backend."
           },
           {
             "id": 5,
             "title": "Create Development Documentation and Scripts",
             "description": "Enhance the README with detailed setup instructions and create development scripts for common tasks.",
+            "status": "pending",
             "dependencies": [],
             "details": "Update README.md with detailed setup instructions for both frontend and backend. Create shell scripts or npm scripts for common development tasks like starting servers, running tests, and linting code. Document the project structure and development workflow. Add contribution guidelines and code style conventions.",
-            "status": "pending",
             "testStrategy": "Verify that a new developer can follow the README instructions to set up the environment. Test all scripts to ensure they perform their intended functions correctly. Ensure documentation is clear and comprehensive."
+          },
+          {
+            "id": 6,
+            "title": "Verify Project Structure Against Rules and Guidelines",
+            "description": "Validate that the project structure and configuration follows all rules and guidelines defined in the .cursor/rules/ directory.",
+            "status": "pending",
+            "dependencies": [
+              1,
+              2,
+              3,
+              4,
+              5
+            ],
+            "details": "Verify that the folder structure matches project_structure.mdc exactly. Ensure all configuration files are properly set up according to guidelines. Validate that the development environment follows backend_implementation.mdc, frontend_implementation.mdc, ai_services_implementation.mdc, document_processing.mdc, and quality_assurance.mdc guidelines. Confirm that the setup is ready for implementation according to all rule files. Create a verification checklist to ensure all guidelines are followed.",
+            "testStrategy": "Create a comprehensive verification checklist based on all rule files. Perform a systematic review of the project structure against the checklist. Document any discrepancies and fix them. Verify that the project foundation is solid and follows all established patterns before proceeding with implementation tasks."
           }
         ]
       },

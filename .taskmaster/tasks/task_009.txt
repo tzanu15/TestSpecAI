@@ -26,3 +26,56 @@ Technology recommendations:
 
 # Test Strategy:
 Write API tests using pytest and TestClient. Test all endpoints with valid and invalid data. Verify proper error responses. Test template validation. Verify that commands with invalid parameter references are rejected.
+
+# Subtasks:
+## 1. Create Commands Router and Basic Endpoints [pending]
+### Dependencies: None
+### Description: Set up the FastAPI router for commands with proper path prefix and implement the basic CRUD endpoints for commands.
+### Details:
+1. Create a new router in routes directory with '/commands' prefix
+2. Implement GET /commands endpoint with filtering and pagination
+3. Implement POST /commands for creating new commands
+4. Implement GET /commands/{id} for retrieving specific commands
+5. Add proper request and response models
+6. Implement error handling for common scenarios
+
+## 2. Implement Command Update and Delete Endpoints [pending]
+### Dependencies: 9.1
+### Description: Complete the CRUD operations by implementing the update and delete endpoints for commands.
+### Details:
+1. Implement PUT /commands/{id} for updating commands
+2. Implement DELETE /commands/{id} for deleting commands
+3. Add validation to prevent deletion of commands in use
+4. Implement proper transaction management
+5. Add comprehensive error handling for dependent resources
+
+## 3. Implement Command Categories Endpoints [pending]
+### Dependencies: 9.1
+### Description: Create endpoints for managing command categories to organize commands.
+### Details:
+1. Implement GET /commands/categories for listing command categories
+2. Implement POST /commands/categories for creating command categories
+3. Implement PUT /commands/categories/{id} for updating command categories
+4. Implement DELETE /commands/categories/{id} for deleting command categories
+5. Add validation to prevent deletion of categories with assigned commands
+
+## 4. Implement Command Template Validation [pending]
+### Dependencies: 9.1, 9.2
+### Description: Add validation logic for command templates and parameter references.
+### Details:
+1. Create validation service for command templates
+2. Implement syntax checking for command templates
+3. Validate parameter references in command templates
+4. Add validation hooks to POST and PUT endpoints
+5. Implement detailed error responses for validation failures
+
+## 5. Implement Advanced Search and Documentation [pending]
+### Dependencies: 9.1, 9.2, 9.3, 9.4
+### Description: Add advanced search capabilities for commands and complete API documentation.
+### Details:
+1. Implement GET /commands/search with advanced filtering options
+2. Add full-text search capabilities
+3. Implement filtering by category, parameters used, and other attributes
+4. Complete OpenAPI documentation for all endpoints
+5. Add usage examples to API documentation
+

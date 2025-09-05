@@ -1,0 +1,528 @@
+---
+description: Backend Implementation Guidelines for TestSpecAI
+globs: backend/**/*
+alwaysApply: true
+---
+
+# Backend Implementation Guidelines
+
+## **FastAPI Application Structure**
+
+### **✅ Main Application Setup**
+```python
+# backend/app/main.py
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api import requirements, test_specs, parameters, commands, ai, documents
+from app.database import engine
+from app.models import Base
+
+app = FastAPI(
+    title="TestSpecAI API",
+    description="Automotive Test Specification AI Platform",
+    version="1.0.0"
+)
+
+# CORS middleware for frontend communication
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(requirements.router, prefix="/api/v1/requirements", tags=["requirements"])
+app.include_router(test_specs.router, prefix="/api/v1/test-specifications", tags=["test-specifications"])
+app.include_router(parameters.router, prefix="/api/v1/parameters", tags=["parameters"])
+app.include_router(commands.router, prefix="/api/v1/commands", tags=["commands"])
+app.include_router(ai.router, prefix="/api/v1/ai", tags=["ai"])
+app.include_router(documents.router, prefix="/api/v1/documents", tags=["documents"])
+```
+
+### **✅ Database Configuration**
+```python
+# backend/app/database.py
+from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy.orm import sessionmaker
+from app.config import settings
+
+# Development (SQLite)
+if settings.ENVIRONMENT == "development":
+    DATABASE_URL = "sqlite+aiosqlite:///./testspecai.db"
+    engine = create_async_engine(DATABASE_URL, echo=True)
+
+# Production (PostgreSQL)
+else:
+    DATABASE_URL = f"postgresql+asyncpg://{settings.DB_USER}:{settings.DB_PASSWORD}@{settings.DB_HOST}:{settings.DB_PORT}/{settings.DB_NAME}"
+    engine = create_async_engine(DATABASE_URL, echo=False)
+
+AsyncSessionLocal = sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
+
+async def get_db():
+    async with AsyncSessionLocal() as session:
+        try:
+            yield session
+        finally:
+            await session.close()
+```
+
+## **SQLAlchemy Models (CRITICAL RULES)**
+
+### **✅ Base Model Pattern**
+```python
+# backend/app/models/base.py
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy import Column, DateTime, String
+from sqlalchemy.dialects.postgresql import UUID
+import uuid
+from datetime import datetime
+
+Base = declarative_base()
+
+class BaseModel(Base):
+    __abstract__ = True
+    
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    created_by = Column(String, nullable=False)
+    is_active = Column(Boolean, default=True)
+```
+
+### **✅ Model Implementation Rules**
+- **Always inherit from BaseModel**
+- **Use UUID for all primary keys**
+- **Include created_at, updated_at, created_by, is_active**
+- **Use proper relationship definitions**
+- **Implement __repr__ methods for debugging**
+
+### **✅ Relationship Patterns**
+```python
+# One-to-Many
+class TestSpecification(BaseModel):
+    __tablename__ = "test_specifications"
+    
+    test_steps = relationship("TestStep", back_populates="test_specification", cascade="all, delete-orphan")
+
+# Many-to-Many
+class TestSpecification(BaseModel):
+    __tablename__ = "test_specifications"
+    
+    requirements = relationship("Requirement", secondary="test_requirement_association", back_populates="test_specifications")
+
+# Association Table
+test_requirement_association = Table(
+    "test_requirement_association",
+    Base.metadata,
+    Column("test_specification_id", UUID(as_uuid=True), ForeignKey("test_specifications.id")),
+    Column("requirement_id", UUID(as_uuid=True), ForeignKey("requirements.id"))
+)
+```
+
+## **Pydantic Schemas (CRITICAL RULES)**
+
+### **✅ Schema Base Pattern**
+```python
+# backend/app/schemas/base.py
+from pydantic import BaseModel, Field
+from typing import Optional
+from datetime import datetime
+from uuid import UUID
+
+class BaseSchema(BaseModel):
+    id: UUID
+    created_at: datetime
+    updated_at: datetime
+    created_by: str
+    is_active: bool = True
+
+    class Config:
+        from_attributes = True
+        json_encoders = {
+            datetime: lambda v: v.isoformat()
+        }
+```
+
+### **✅ Request/Response Schema Pattern**
+```python
+# Create Schema
+class RequirementCreate(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    description: str = Field(..., min_length=1)
+    category_id: UUID
+    source: str = Field(default="manual")
+    metadata: Optional[dict] = Field(default_factory=dict)
+
+# Update Schema
+class RequirementUpdate(BaseModel):
+    title: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None, min_length=1)
+    category_id: Optional[UUID] = None
+    metadata: Optional[dict] = None
+
+# Response Schema
+class RequirementResponse(BaseSchema):
+    title: str
+    description: str
+    category_id: UUID
+    source: str
+    metadata: dict
+```
+
+## **CRUD Operations (CRITICAL RULES)**
+
+### **✅ Base CRUD Pattern**
+```python
+# backend/app/crud/base.py
+from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
+from fastapi.encoders import jsonable_encoder
+from pydantic import BaseModel
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, update, delete
+from sqlalchemy.orm import selectinload
+from app.models.base import BaseModel as SQLAlchemyBaseModel
+
+ModelType = TypeVar("ModelType", bound=SQLAlchemyBaseModel)
+CreateSchemaType = TypeVar("CreateSchemaType", bound=BaseModel)
+UpdateSchemaType = TypeVar("UpdateSchemaType", bound=BaseModel)
+
+class CRUDBase(Generic[ModelType, CreateSchemaType, UpdateSchemaType]):
+    def __init__(self, model: Type[ModelType]):
+        self.model = model
+
+    async def get(self, db: AsyncSession, id: Any) -> Optional[ModelType]:
+        result = await db.execute(select(self.model).where(self.model.id == id))
+        return result.scalar_one_or_none()
+
+    async def get_multi(
+        self, db: AsyncSession, *, skip: int = 0, limit: int = 100
+    ) -> List[ModelType]:
+        result = await db.execute(select(self.model).offset(skip).limit(limit))
+        return result.scalars().all()
+
+    async def create(self, db: AsyncSession, *, obj_in: CreateSchemaType) -> ModelType:
+        obj_in_data = jsonable_encoder(obj_in)
+        db_obj = self.model(**obj_in_data)
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
+
+    async def update(
+        self,
+        db: AsyncSession,
+        *,
+        db_obj: ModelType,
+        obj_in: Union[UpdateSchemaType, Dict[str, Any]]
+    ) -> ModelType:
+        obj_data = jsonable_encoder(db_obj)
+        if isinstance(obj_in, dict):
+            update_data = obj_in
+        else:
+            update_data = obj_in.dict(exclude_unset=True)
+        
+        for field in obj_data:
+            if field in update_data:
+                setattr(db_obj, field, update_data[field])
+        
+        db.add(db_obj)
+        await db.commit()
+        await db.refresh(db_obj)
+        return db_obj
+
+    async def remove(self, db: AsyncSession, *, id: Any) -> ModelType:
+        result = await db.execute(select(self.model).where(self.model.id == id))
+        obj = result.scalar_one()
+        await db.delete(obj)
+        await db.commit()
+        return obj
+```
+
+### **✅ Entity-Specific CRUD**
+```python
+# backend/app/crud/requirement.py
+from typing import List, Optional
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, and_
+from app.crud.base import CRUDBase
+from app.models.requirement import Requirement
+from app.schemas.requirement import RequirementCreate, RequirementUpdate
+
+class CRUDRequirement(CRUDBase[Requirement, RequirementCreate, RequirementUpdate]):
+    async def get_by_category(
+        self, db: AsyncSession, *, category_id: str, skip: int = 0, limit: int = 100
+    ) -> List[Requirement]:
+        result = await db.execute(
+            select(Requirement)
+            .where(and_(Requirement.category_id == category_id, Requirement.is_active == True))
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+    async def search_by_title(
+        self, db: AsyncSession, *, title: str, skip: int = 0, limit: int = 100
+    ) -> List[Requirement]:
+        result = await db.execute(
+            select(Requirement)
+            .where(and_(Requirement.title.ilike(f"%{title}%"), Requirement.is_active == True))
+            .offset(skip)
+            .limit(limit)
+        )
+        return result.scalars().all()
+
+requirement = CRUDRequirement(Requirement)
+```
+
+## **API Endpoints (CRITICAL RULES)**
+
+### **✅ Router Pattern**
+```python
+# backend/app/api/requirements.py
+from typing import List
+from fastapi import APIRouter, Depends, HTTPException, Query
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_db
+from app.crud import requirement
+from app.schemas.requirement import RequirementCreate, RequirementUpdate, RequirementResponse
+
+router = APIRouter()
+
+@router.get("/", response_model=List[RequirementResponse])
+async def get_requirements(
+    db: AsyncSession = Depends(get_db),
+    skip: int = Query(0, ge=0),
+    limit: int = Query(100, ge=1, le=1000),
+    category_id: Optional[str] = Query(None),
+    search: Optional[str] = Query(None)
+):
+    """Get all requirements with optional filtering"""
+    try:
+        if category_id:
+            requirements = await requirement.get_by_category(
+                db, category_id=category_id, skip=skip, limit=limit
+            )
+        elif search:
+            requirements = await requirement.search_by_title(
+                db, title=search, skip=skip, limit=limit
+            )
+        else:
+            requirements = await requirement.get_multi(db, skip=skip, limit=limit)
+        
+        return requirements
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.post("/", response_model=RequirementResponse)
+async def create_requirement(
+    *,
+    db: AsyncSession = Depends(get_db),
+    requirement_in: RequirementCreate
+):
+    """Create a new requirement"""
+    try:
+        requirement_obj = await requirement.create(db, obj_in=requirement_in)
+        return requirement_obj
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@router.get("/{requirement_id}", response_model=RequirementResponse)
+async def get_requirement(
+    *,
+    db: AsyncSession = Depends(get_db),
+    requirement_id: str
+):
+    """Get a specific requirement by ID"""
+    requirement_obj = await requirement.get(db, id=requirement_id)
+    if not requirement_obj:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+    return requirement_obj
+
+@router.put("/{requirement_id}", response_model=RequirementResponse)
+async def update_requirement(
+    *,
+    db: AsyncSession = Depends(get_db),
+    requirement_id: str,
+    requirement_in: RequirementUpdate
+):
+    """Update a requirement"""
+    requirement_obj = await requirement.get(db, id=requirement_id)
+    if not requirement_obj:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+    
+    requirement_obj = await requirement.update(db, db_obj=requirement_obj, obj_in=requirement_in)
+    return requirement_obj
+
+@router.delete("/{requirement_id}")
+async def delete_requirement(
+    *,
+    db: AsyncSession = Depends(get_db),
+    requirement_id: str
+):
+    """Delete a requirement"""
+    requirement_obj = await requirement.get(db, id=requirement_id)
+    if not requirement_obj:
+        raise HTTPException(status_code=404, detail="Requirement not found")
+    
+    await requirement.remove(db, id=requirement_id)
+    return {"message": "Requirement deleted successfully"}
+```
+
+## **Error Handling (MANDATORY)**
+
+### **✅ Custom Exceptions**
+```python
+# backend/app/utils/exceptions.py
+class TestSpecAIException(Exception):
+    """Base exception for TestSpecAI"""
+    pass
+
+class ValidationError(TestSpecAIException):
+    """Validation error"""
+    pass
+
+class NotFoundError(TestSpecAIException):
+    """Resource not found error"""
+    pass
+
+class ConflictError(TestSpecAIException):
+    """Resource conflict error"""
+    pass
+```
+
+### **✅ Global Exception Handler**
+```python
+# backend/app/main.py
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
+from app.utils.exceptions import TestSpecAIException, ValidationError, NotFoundError
+
+@app.exception_handler(TestSpecAIException)
+async def test_spec_ai_exception_handler(request: Request, exc: TestSpecAIException):
+    return JSONResponse(
+        status_code=400,
+        content={"detail": str(exc), "type": exc.__class__.__name__}
+    )
+
+@app.exception_handler(NotFoundError)
+async def not_found_exception_handler(request: Request, exc: NotFoundError):
+    return JSONResponse(
+        status_code=404,
+        content={"detail": str(exc), "type": "NotFoundError"}
+    )
+```
+
+## **Configuration Management (CRITICAL)**
+
+### **✅ Environment Configuration**
+```python
+# backend/app/config.py
+from pydantic import BaseSettings
+from typing import Optional
+
+class Settings(BaseSettings):
+    # Application
+    APP_NAME: str = "TestSpecAI"
+    ENVIRONMENT: str = "development"
+    DEBUG: bool = True
+    
+    # Database
+    DB_HOST: Optional[str] = None
+    DB_PORT: Optional[int] = None
+    DB_USER: Optional[str] = None
+    DB_PASSWORD: Optional[str] = None
+    DB_NAME: Optional[str] = None
+    
+    # AI Services
+    LLM_SERVER_URL: str = "http://localhost:8001"
+    NLP_MODEL_NAME: str = "sentence-transformers/all-MiniLM-L6-v2"
+    
+    # File Storage
+    UPLOAD_DIR: str = "./uploads"
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    
+    class Config:
+        env_file = ".env"
+
+settings = Settings()
+```
+
+## **Database Migrations (MANDATORY)**
+
+### **✅ Alembic Configuration**
+```python
+# backend/alembic.ini
+[alembic]
+script_location = alembic
+prepend_sys_path = .
+version_path_separator = os
+sqlalchemy.url = sqlite:///./testspecai.db
+
+[post_write_hooks]
+hooks = black
+black.type = console_scripts
+black.entrypoint = black
+black.options = -l 79 REVISION_SCRIPT_FILENAME
+```
+
+### **✅ Migration Commands**
+```bash
+# Create migration
+alembic revision --autogenerate -m "Initial migration"
+
+# Apply migration
+alembic upgrade head
+
+# Rollback migration
+alembic downgrade -1
+```
+
+## **Testing Requirements (MANDATORY)**
+
+### **✅ Test Structure**
+```python
+# backend/tests/test_requirements.py
+import pytest
+from httpx import AsyncClient
+from app.main import app
+
+@pytest.mark.asyncio
+async def test_create_requirement():
+    async with AsyncClient(app=app, base_url="http://test") as ac:
+        response = await ac.post(
+            "/api/v1/requirements/",
+            json={
+                "title": "Test Requirement",
+                "description": "Test Description",
+                "category_id": "test-category-id"
+            }
+        )
+    assert response.status_code == 200
+    assert response.json()["title"] == "Test Requirement"
+```
+
+## **Implementation Checklist**
+
+### **Before Starting Any Backend Task:**
+- [ ] **Check project structure** matches exactly
+- [ ] **Verify database models** follow BaseModel pattern
+- [ ] **Ensure async/await** is used everywhere
+- [ ] **Implement proper error handling**
+- [ ] **Add proper logging**
+- [ ] **Write tests** for new functionality
+- [ ] **Update API documentation**
+
+### **Code Quality Checks:**
+- [ ] **No hardcoded values** (use settings)
+- [ ] **Proper type hints** everywhere
+- [ ] **Follow PEP 8** style guide
+- [ ] **Use dependency injection** (Depends)
+- [ ] **Implement proper validation**
+- [ ] **Handle edge cases**
+- [ ] **Add proper docstrings**
+
+---
+
+**Remember**: Backend implementation must be robust, scalable, and follow FastAPI best practices. Always test thoroughly before marking tasks complete.

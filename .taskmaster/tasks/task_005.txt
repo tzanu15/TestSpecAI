@@ -23,3 +23,35 @@ Technology recommendations:
 
 # Test Strategy:
 Write unit tests for all CRUD operations. Test filtering, sorting, and pagination. Verify transaction rollback on errors. Test concurrent operations to ensure data integrity.
+
+# Subtasks:
+## 1. Create Base CRUD Class [pending]
+### Dependencies: None
+### Description: Develop a base CRUD class with common operations that all entity-specific CRUD classes will inherit from
+### Details:
+Implement a BaseCRUD class with async methods for create, read, update, delete, list, and count operations. Include support for filtering, sorting, and pagination. Implement proper error handling and validation. Use SQLAlchemy 2.0+ async query API and leverage session management for transactions.
+
+## 2. Implement Entity-Specific CRUD Operations [pending]
+### Dependencies: 5.1
+### Description: Develop CRUD operations for Requirements, TestSpecification, and Category entities
+### Details:
+Create specialized CRUD classes for Requirements, TestSpecification, and Category entities by extending the BaseCRUD class. Implement entity-specific validation rules and relationships. Add methods for retrieving related entities (e.g., get requirements by category). Implement proper error handling for constraint violations.
+
+## 3. Implement Parameter and Command CRUD Operations [pending]
+### Dependencies: 5.1
+### Description: Develop CRUD operations for Parameter, ParameterVariant, and GenericCommand entities
+### Details:
+Create specialized CRUD classes for Parameter, ParameterVariant, and GenericCommand entities. Implement proper relationship handling between Parameters and their Variants. Add methods for retrieving commands by category. Implement validation for command templates and parameter constraints.
+
+## 4. Implement Advanced Query Features [pending]
+### Dependencies: 5.1, 5.2, 5.3
+### Description: Add support for advanced filtering, sorting, pagination, and search functionality
+### Details:
+Enhance the CRUD operations with advanced filtering capabilities (e.g., text search, date ranges, multiple conditions). Implement efficient sorting mechanisms using SQLAlchemy's order_by(). Add pagination support using limit() and offset(). Implement search functionality across multiple fields. Optimize queries for performance.
+
+## 5. Implement Transaction Management [pending]
+### Dependencies: 5.1, 5.2, 5.3, 5.4
+### Description: Develop transaction management for complex operations involving multiple entities
+### Details:
+Implement transaction management using SQLAlchemy's session.begin(). Create methods for operations that modify multiple entities atomically. Use with_for_update() for locking when needed to prevent race conditions. Implement proper error handling and rollback on failures. Add support for bulk operations within transactions for better performance.
+

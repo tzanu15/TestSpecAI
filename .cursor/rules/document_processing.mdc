@@ -1,0 +1,676 @@
+---
+description: Document Processing Implementation Guidelines for TestSpecAI
+globs: backend/app/services/document_*.py, backend/app/utils/document_*.py
+alwaysApply: true
+---
+
+# Document Processing Implementation Guidelines
+
+## **Document Processing Service Architecture**
+
+### **✅ Service Structure**
+```python
+# backend/app/services/document_service.py
+from typing import List, Dict, Any, Optional, Union
+from abc import ABC, abstractmethod
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+from pathlib import Path
+import mimetypes
+from app.config import settings
+from app.models.requirement import Requirement, RequirementCategory
+from app.schemas.requirement import RequirementCreate
+
+class DocumentProcessor(ABC):
+    """Abstract base class for document processors"""
+    
+    @abstractmethod
+    async def extract_text(self, file_path: Path) -> str:
+        """Extract text content from document"""
+        pass
+    
+    @abstractmethod
+    async def extract_requirements(self, text: str) -> List[Dict[str, Any]]:
+        """Extract requirements from text content"""
+        pass
+
+class WordProcessor(DocumentProcessor):
+    """Microsoft Word document processor"""
+    
+    async def extract_text(self, file_path: Path) -> str:
+        """Extract text from .docx file"""
+        from docx import Document
+        
+        def _extract():
+            doc = Document(file_path)
+            text_parts = []
+            
+            for paragraph in doc.paragraphs:
+                if paragraph.text.strip():
+                    text_parts.append(paragraph.text.strip())
+            
+            # Extract text from tables
+            for table in doc.tables:
+                for row in table.rows:
+                    row_text = []
+                    for cell in row.cells:
+                        if cell.text.strip():
+                            row_text.append(cell.text.strip())
+                    if row_text:
+                        text_parts.append(" | ".join(row_text))
+            
+            return "\n".join(text_parts)
+        
+        # Run in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            return await loop.run_in_executor(executor, _extract)
+    
+    async def extract_requirements(self, text: str) -> List[Dict[str, Any]]:
+        """Extract requirements from Word document text"""
+        return await self._extract_requirements_from_text(text, "word")
+
+class PDFProcessor(DocumentProcessor):
+    """PDF document processor"""
+    
+    async def extract_text(self, file_path: Path) -> str:
+        """Extract text from PDF file"""
+        import PyPDF2
+        
+        def _extract():
+            text_parts = []
+            with open(file_path, 'rb') as file:
+                pdf_reader = PyPDF2.PdfReader(file)
+                
+                for page_num in range(len(pdf_reader.pages)):
+                    page = pdf_reader.pages[page_num]
+                    text = page.extract_text()
+                    if text.strip():
+                        text_parts.append(text.strip())
+            
+            return "\n".join(text_parts)
+        
+        # Run in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            return await loop.run_in_executor(executor, _extract)
+    
+    async def extract_requirements(self, text: str) -> List[Dict[str, Any]]:
+        """Extract requirements from PDF text"""
+        return await self._extract_requirements_from_text(text, "pdf")
+
+class ExcelProcessor(DocumentProcessor):
+    """Excel document processor"""
+    
+    async def extract_text(self, file_path: Path) -> str:
+        """Extract text from Excel file"""
+        import openpyxl
+        
+        def _extract():
+            text_parts = []
+            workbook = openpyxl.load_workbook(file_path, data_only=True)
+            
+            for sheet_name in workbook.sheetnames:
+                sheet = workbook[sheet_name]
+                sheet_text = []
+                
+                for row in sheet.iter_rows(values_only=True):
+                    row_text = []
+                    for cell in row:
+                        if cell is not None and str(cell).strip():
+                            row_text.append(str(cell).strip())
+                    if row_text:
+                        sheet_text.append(" | ".join(row_text))
+                
+                if sheet_text:
+                    text_parts.append(f"Sheet: {sheet_name}")
+                    text_parts.extend(sheet_text)
+            
+            return "\n".join(text_parts)
+        
+        # Run in thread pool to avoid blocking
+        loop = asyncio.get_event_loop()
+        with ThreadPoolExecutor() as executor:
+            return await loop.run_in_executor(executor, _extract)
+    
+    async def extract_requirements(self, text: str) -> List[Dict[str, Any]]:
+        """Extract requirements from Excel text"""
+        return await self._extract_requirements_from_text(text, "excel")
+
+class DocumentProcessingService:
+    """Main document processing service"""
+    
+    def __init__(self):
+        self.processors = {
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document': WordProcessor(),
+            'application/pdf': PDFProcessor(),
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ExcelProcessor(),
+            'application/vnd.ms-excel': ExcelProcessor(),
+        }
+        self.executor = ThreadPoolExecutor(max_workers=4)
+    
+    async def process_document(
+        self,
+        file_path: Path,
+        category_id: Optional[str] = None,
+        source: str = "document_upload"
+    ) -> List[RequirementCreate]:
+        """Process a document and extract requirements"""
+        try:
+            # Determine file type
+            mime_type, _ = mimetypes.guess_type(str(file_path))
+            if not mime_type or mime_type not in self.processors:
+                raise ValueError(f"Unsupported file type: {mime_type}")
+            
+            # Get processor
+            processor = self.processors[mime_type]
+            
+            # Extract text
+            text = await processor.extract_text(file_path)
+            if not text.strip():
+                raise ValueError("No text content found in document")
+            
+            # Extract requirements
+            requirements_data = await processor.extract_requirements(text)
+            
+            # Convert to RequirementCreate objects
+            requirements = []
+            for req_data in requirements_data:
+                requirements.append(RequirementCreate(
+                    title=req_data.get("title", "Untitled Requirement"),
+                    description=req_data.get("description", ""),
+                    category_id=category_id or req_data.get("category_id"),
+                    source=source,
+                    metadata={
+                        "file_path": str(file_path),
+                        "mime_type": mime_type,
+                        "extraction_method": req_data.get("extraction_method", "auto"),
+                        "confidence": req_data.get("confidence", 0.5)
+                    }
+                ))
+            
+            return requirements
+            
+        except Exception as e:
+            raise Exception(f"Failed to process document: {str(e)}")
+    
+    async def _extract_requirements_from_text(
+        self, 
+        text: str, 
+        source_type: str
+    ) -> List[Dict[str, Any]]:
+        """Extract requirements from text using pattern matching and NLP"""
+        requirements = []
+        
+        # Split text into sections
+        sections = self._split_text_into_sections(text)
+        
+        for section in sections:
+            # Try to identify requirement patterns
+            req_patterns = self._identify_requirement_patterns(section)
+            
+            for pattern in req_patterns:
+                requirement = self._parse_requirement_pattern(pattern, source_type)
+                if requirement:
+                    requirements.append(requirement)
+        
+        return requirements
+    
+    def _split_text_into_sections(self, text: str) -> List[str]:
+        """Split text into logical sections"""
+        # Common section delimiters
+        delimiters = [
+            r'\n\s*\d+\.\s+',  # Numbered lists
+            r'\n\s*[A-Z][A-Z\s]+\n',  # All caps headers
+            r'\n\s*REQ\s*\d+',  # REQ followed by number
+            r'\n\s*Requirement\s*\d+',  # Requirement followed by number
+            r'\n\s*[A-Z][a-z]+\s+Requirements?\s*\n',  # Section headers
+        ]
+        
+        import re
+        sections = [text]
+        
+        for delimiter in delimiters:
+            new_sections = []
+            for section in sections:
+                parts = re.split(delimiter, section)
+                new_sections.extend([part.strip() for part in parts if part.strip()])
+            sections = new_sections
+        
+        return sections
+    
+    def _identify_requirement_patterns(self, text: str) -> List[Dict[str, Any]]:
+        """Identify potential requirement patterns in text"""
+        import re
+        
+        patterns = []
+        
+        # Pattern 1: Numbered requirements
+        numbered_pattern = r'(\d+\.?\s*)([A-Z][^.]*\.?\s*)(.*?)(?=\d+\.?\s*[A-Z]|$)'
+        matches = re.finditer(numbered_pattern, text, re.DOTALL | re.MULTILINE)
+        for match in matches:
+            patterns.append({
+                "type": "numbered",
+                "number": match.group(1).strip(),
+                "title": match.group(2).strip(),
+                "content": match.group(3).strip(),
+                "full_text": match.group(0).strip()
+            })
+        
+        # Pattern 2: REQ-XXX format
+        req_pattern = r'(REQ\s*\d+[:\-]?\s*)([A-Z][^.]*\.?\s*)(.*?)(?=REQ\s*\d+[:\-]?|$)'
+        matches = re.finditer(req_pattern, text, re.DOTALL | re.MULTILINE)
+        for match in matches:
+            patterns.append({
+                "type": "req_format",
+                "number": match.group(1).strip(),
+                "title": match.group(2).strip(),
+                "content": match.group(3).strip(),
+                "full_text": match.group(0).strip()
+            })
+        
+        # Pattern 3: The system shall/should/must
+        system_pattern = r'(The\s+system\s+(?:shall|should|must|will|can|may)\s+[^.]*\.?\s*)(.*?)(?=The\s+system\s+(?:shall|should|must|will|can|may)|$)'
+        matches = re.finditer(system_pattern, text, re.DOTALL | re.MULTILINE)
+        for match in matches:
+            patterns.append({
+                "type": "system_requirement",
+                "title": match.group(1).strip(),
+                "content": match.group(2).strip(),
+                "full_text": match.group(0).strip()
+            })
+        
+        return patterns
+    
+    def _parse_requirement_pattern(
+        self, 
+        pattern: Dict[str, Any], 
+        source_type: str
+    ) -> Optional[Dict[str, Any]]:
+        """Parse a requirement pattern into structured data"""
+        try:
+            # Extract title and description
+            title = pattern.get("title", "").strip()
+            content = pattern.get("content", "").strip()
+            
+            if not title and not content:
+                return None
+            
+            # Clean up title
+            if title:
+                title = re.sub(r'^[A-Z\s]+:\s*', '', title)  # Remove prefixes like "REQUIREMENT:"
+                title = re.sub(r'[^\w\s\-\(\)]', '', title)  # Remove special chars except parentheses
+                title = title.strip()
+            
+            # Determine category based on content
+            category_id = self._determine_category(content)
+            
+            # Calculate confidence based on pattern quality
+            confidence = self._calculate_confidence(pattern)
+            
+            return {
+                "title": title or f"Requirement from {source_type}",
+                "description": content,
+                "category_id": category_id,
+                "extraction_method": f"{pattern['type']}_{source_type}",
+                "confidence": confidence
+            }
+            
+        except Exception as e:
+            print(f"Error parsing requirement pattern: {e}")
+            return None
+    
+    def _determine_category(self, content: str) -> Optional[str]:
+        """Determine requirement category based on content"""
+        content_lower = content.lower()
+        
+        # UDS keywords
+        uds_keywords = ['uds', 'unified diagnostic', 'diagnostic', 'ecu', 'dtc', 'diagnostic trouble code']
+        if any(keyword in content_lower for keyword in uds_keywords):
+            return "UDS"
+        
+        # Communication keywords
+        comm_keywords = ['can', 'flexray', 'lin', 'ethernet', 'communication', 'message', 'signal']
+        if any(keyword in content_lower for keyword in comm_keywords):
+            return "Communication"
+        
+        # Error Handler keywords
+        error_keywords = ['error', 'fault', 'exception', 'failure', 'recovery', 'handling']
+        if any(keyword in content_lower for keyword in error_keywords):
+            return "ErrorHandler"
+        
+        # Cyber Security keywords
+        security_keywords = ['security', 'authentication', 'authorization', 'encryption', 'cyber', 'secure']
+        if any(keyword in content_lower for keyword in security_keywords):
+            return "CyberSecurity"
+        
+        return None  # Will use default category
+    
+    def _calculate_confidence(self, pattern: Dict[str, Any]) -> float:
+        """Calculate confidence score for extracted requirement"""
+        confidence = 0.5  # Base confidence
+        
+        # Boost confidence based on pattern type
+        if pattern["type"] == "req_format":
+            confidence += 0.3
+        elif pattern["type"] == "system_requirement":
+            confidence += 0.2
+        elif pattern["type"] == "numbered":
+            confidence += 0.1
+        
+        # Boost confidence based on content quality
+        content = pattern.get("content", "")
+        if len(content) > 50:
+            confidence += 0.1
+        if len(content) > 100:
+            confidence += 0.1
+        
+        # Boost confidence if title is present and meaningful
+        title = pattern.get("title", "")
+        if title and len(title) > 10:
+            confidence += 0.1
+        
+        return min(confidence, 1.0)
+
+# Global instance
+document_service = DocumentProcessingService()
+```
+
+## **File Upload and Management**
+
+### **✅ File Upload Handler**
+```python
+# backend/app/api/documents.py
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, BackgroundTasks
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_db
+from app.services.document_service import document_service
+from app.crud.requirement import requirement
+from app.schemas.document import DocumentUploadResponse, ProcessingJob
+import uuid
+import asyncio
+from pathlib import Path
+import aiofiles
+
+router = APIRouter()
+
+@router.post("/upload", response_model=DocumentUploadResponse)
+async def upload_document(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    category_id: str = None,
+    db: AsyncSession = Depends(get_db)
+):
+    """Upload and process a document"""
+    try:
+        # Validate file type
+        allowed_types = [
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'application/pdf',
+            'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+            'application/vnd.ms-excel'
+        ]
+        
+        if file.content_type not in allowed_types:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Unsupported file type: {file.content_type}"
+            )
+        
+        # Validate file size
+        if file.size > settings.MAX_FILE_SIZE:
+            raise HTTPException(
+                status_code=400,
+                detail=f"File too large. Maximum size: {settings.MAX_FILE_SIZE} bytes"
+            )
+        
+        # Generate unique filename
+        file_id = str(uuid.uuid4())
+        file_extension = Path(file.filename).suffix
+        filename = f"{file_id}{file_extension}"
+        
+        # Save file
+        upload_path = Path(settings.UPLOAD_DIR) / filename
+        upload_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        async with aiofiles.open(upload_path, 'wb') as f:
+            content = await file.read()
+            await f.write(content)
+        
+        # Create processing job
+        job = ProcessingJob(
+            id=file_id,
+            status="processing",
+            filename=file.filename,
+            file_path=str(upload_path),
+            category_id=category_id
+        )
+        
+        # Start background processing
+        background_tasks.add_task(
+            process_document_background,
+            job.id,
+            upload_path,
+            category_id
+        )
+        
+        return DocumentUploadResponse(
+            job_id=job.id,
+            status="processing",
+            message="Document uploaded successfully. Processing started."
+        )
+        
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/process-status/{job_id}")
+async def get_processing_status(
+    job_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get document processing status"""
+    # Implementation to get job status from database or cache
+    pass
+
+async def process_document_background(
+    job_id: str,
+    file_path: Path,
+    category_id: Optional[str]
+):
+    """Background task for document processing"""
+    try:
+        # Process document
+        requirements = await document_service.process_document(
+            file_path=file_path,
+            category_id=category_id,
+            source="document_upload"
+        )
+        
+        # Save requirements to database
+        # Implementation to save requirements
+        
+        # Update job status
+        # Implementation to update job status
+        
+    except Exception as e:
+        # Update job status with error
+        # Implementation to handle errors
+        pass
+```
+
+## **Document Processing Schemas**
+
+### **✅ Pydantic Schemas**
+```python
+# backend/app/schemas/document.py
+from pydantic import BaseModel, Field
+from typing import Optional, List
+from datetime import datetime
+from enum import Enum
+
+class ProcessingStatus(str, Enum):
+    PROCESSING = "processing"
+    COMPLETED = "completed"
+    FAILED = "failed"
+
+class DocumentUploadResponse(BaseModel):
+    job_id: str
+    status: ProcessingStatus
+    message: str
+
+class ProcessingJob(BaseModel):
+    id: str
+    status: ProcessingStatus
+    filename: str
+    file_path: str
+    category_id: Optional[str] = None
+    requirements_count: Optional[int] = None
+    error: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+class DocumentProcessingResult(BaseModel):
+    job_id: str
+    status: ProcessingStatus
+    requirements_extracted: int
+    requirements_saved: int
+    errors: List[str] = []
+    processing_time: float
+    confidence_scores: List[float] = []
+```
+
+## **Configuration and Settings**
+
+### **✅ Document Processing Configuration**
+```python
+# backend/app/config.py (Document Processing section)
+class Settings(BaseSettings):
+    # Document Processing
+    UPLOAD_DIR: str = "./uploads"
+    MAX_FILE_SIZE: int = 10 * 1024 * 1024  # 10MB
+    ALLOWED_FILE_TYPES: List[str] = [
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/pdf',
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel'
+    ]
+    
+    # Processing Settings
+    MAX_CONCURRENT_PROCESSING: int = 4
+    PROCESSING_TIMEOUT: int = 300  # 5 minutes
+    MIN_REQUIREMENT_LENGTH: int = 10
+    MIN_CONFIDENCE_THRESHOLD: float = 0.3
+```
+
+## **Error Handling and Validation**
+
+### **✅ Document Processing Errors**
+```python
+# backend/app/utils/document_errors.py
+class DocumentProcessingError(Exception):
+    """Base exception for document processing errors"""
+    pass
+
+class UnsupportedFileTypeError(DocumentProcessingError):
+    """Raised when file type is not supported"""
+    pass
+
+class FileSizeExceededError(DocumentProcessingError):
+    """Raised when file size exceeds limit"""
+    pass
+
+class TextExtractionError(DocumentProcessingError):
+    """Raised when text extraction fails"""
+    pass
+
+class RequirementExtractionError(DocumentProcessingError):
+    """Raised when requirement extraction fails"""
+    pass
+
+class DocumentCorruptedError(DocumentProcessingError):
+    """Raised when document is corrupted or unreadable"""
+    pass
+```
+
+## **Testing Requirements**
+
+### **✅ Document Processing Tests**
+```python
+# backend/tests/test_document_processing.py
+import pytest
+from pathlib import Path
+from app.services.document_service import document_service
+from app.utils.document_errors import UnsupportedFileTypeError
+
+@pytest.mark.asyncio
+async def test_word_document_processing():
+    """Test Word document processing"""
+    file_path = Path("tests/fixtures/sample_requirements.docx")
+    requirements = await document_service.process_document(file_path)
+    
+    assert len(requirements) > 0
+    assert all(req.title for req in requirements)
+    assert all(req.description for req in requirements)
+
+@pytest.mark.asyncio
+async def test_pdf_document_processing():
+    """Test PDF document processing"""
+    file_path = Path("tests/fixtures/sample_requirements.pdf")
+    requirements = await document_service.process_document(file_path)
+    
+    assert len(requirements) > 0
+    assert all(req.title for req in requirements)
+
+@pytest.mark.asyncio
+async def test_unsupported_file_type():
+    """Test unsupported file type handling"""
+    file_path = Path("tests/fixtures/sample.txt")
+    
+    with pytest.raises(ValueError, match="Unsupported file type"):
+        await document_service.process_document(file_path)
+
+@pytest.mark.asyncio
+async def test_requirement_extraction_patterns():
+    """Test requirement pattern extraction"""
+    text = """
+    1. The system shall provide diagnostic capabilities
+    2. REQ-001: The system must handle CAN communication
+    The system should implement error handling mechanisms
+    """
+    
+    # Test pattern extraction logic
+    # Implementation depends on specific pattern matching logic
+```
+
+## **Implementation Checklist**
+
+### **Before Starting Document Processing Tasks:**
+- [ ] **Verify file upload** directory exists and is writable
+- [ ] **Test document libraries** (python-docx, PyPDF2, openpyxl)
+- [ ] **Implement proper error handling** for all file types
+- [ ] **Set up background processing** for large files
+- [ ] **Configure file size limits** and validation
+- [ ] **Test pattern matching** with sample documents
+- [ ] **Implement proper logging** for processing steps
+
+### **Document Processing Quality Checks:**
+- [ ] **All supported file types** are processed correctly
+- [ ] **Text extraction** works for various document formats
+- [ ] **Requirement patterns** are identified accurately
+- [ ] **Category determination** works based on content
+- [ ] **Confidence scoring** is calculated properly
+- [ ] **Error handling** covers all failure scenarios
+- [ ] **Background processing** works correctly
+- [ ] **File cleanup** happens after processing
+
+### **Security and Performance:**
+- [ ] **File type validation** prevents malicious uploads
+- [ ] **File size limits** prevent DoS attacks
+- [ ] **Input sanitization** prevents injection attacks
+- [ ] **Processing timeouts** prevent hanging processes
+- [ ] **Memory usage** is optimized for large files
+- [ ] **Concurrent processing** limits are enforced
+
+---
+
+**Remember**: Document processing is a critical feature that requires robust error handling and thorough testing with various document formats and edge cases.

@@ -1,0 +1,767 @@
+---
+description: AI Services Implementation Guidelines for TestSpecAI
+globs: backend/app/services/ai_*.py, backend/app/services/nlp_*.py, backend/app/services/llm_*.py
+alwaysApply: true
+---
+
+# AI Services Implementation Guidelines
+
+## **NLP Service for Test Matching (CRITICAL RULES)**
+
+### **✅ Service Architecture**
+```python
+# backend/app/services/nlp_service.py
+from typing import List, Dict, Any, Optional
+from sentence_transformers import SentenceTransformer
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import select, text
+import numpy as np
+from sklearn.metrics.pairwise import cosine_similarity
+import asyncio
+from concurrent.futures import ThreadPoolExecutor
+
+class NLPService:
+    def __init__(self):
+        self.model = None
+        self.model_name = "sentence-transformers/all-MiniLM-L6-v2"
+        self.executor = ThreadPoolExecutor(max_workers=4)
+        
+    async def initialize_model(self):
+        """Initialize the sentence transformer model"""
+        if self.model is None:
+            # Run model loading in thread pool to avoid blocking
+            loop = asyncio.get_event_loop()
+            self.model = await loop.run_in_executor(
+                self.executor, 
+                SentenceTransformer, 
+                self.model_name
+            )
+    
+    async def generate_embeddings(self, texts: List[str]) -> np.ndarray:
+        """Generate embeddings for a list of texts"""
+        await self.initialize_model()
+        
+        # Run embedding generation in thread pool
+        loop = asyncio.get_event_loop()
+        embeddings = await loop.run_in_executor(
+            self.executor,
+            self.model.encode,
+            texts
+        )
+        return embeddings
+    
+    async def find_similar_tests(
+        self, 
+        db: AsyncSession, 
+        requirement_text: str, 
+        threshold: float = 0.7,
+        limit: int = 10
+    ) -> List[Dict[str, Any]]:
+        """Find similar tests for a given requirement"""
+        # Generate embedding for the requirement
+        requirement_embedding = await self.generate_embeddings([requirement_text])
+        
+        # Query database for test embeddings using pgvector
+        query = text("""
+            SELECT 
+                ts.id,
+                ts.name,
+                ts.description,
+                ts.precondition,
+                ts.postcondition,
+                ts.functional_area,
+                1 - (ts.embedding <=> :requirement_embedding) as similarity_score
+            FROM test_specifications ts
+            WHERE 1 - (ts.embedding <=> :requirement_embedding) > :threshold
+            ORDER BY ts.embedding <=> :requirement_embedding
+            LIMIT :limit
+        """)
+        
+        result = await db.execute(
+            query,
+            {
+                "requirement_embedding": requirement_embedding[0].tobytes(),
+                "threshold": threshold,
+                "limit": limit
+            }
+        )
+        
+        matches = []
+        for row in result:
+            matches.append({
+                "test_id": str(row.id),
+                "name": row.name,
+                "description": row.description,
+                "precondition": row.precondition,
+                "postcondition": row.postcondition,
+                "functional_area": row.functional_area,
+                "similarity_score": float(row.similarity_score),
+                "confidence": self._calculate_confidence(row.similarity_score)
+            })
+        
+        return matches
+    
+    def _calculate_confidence(self, similarity_score: float) -> str:
+        """Calculate confidence level based on similarity score"""
+        if similarity_score >= 0.9:
+            return "high"
+        elif similarity_score >= 0.7:
+            return "medium"
+        else:
+            return "low"
+    
+    async def update_test_embeddings(self, db: AsyncSession, test_id: str):
+        """Update embeddings for a specific test"""
+        # Get test data
+        from app.models.test_spec import TestSpecification
+        result = await db.execute(
+            select(TestSpecification).where(TestSpecification.id == test_id)
+        )
+        test = result.scalar_one_or_none()
+        
+        if not test:
+            return
+        
+        # Create text representation of the test
+        test_text = f"{test.name} {test.description} {test.precondition} {test.postcondition}"
+        
+        # Generate embedding
+        embedding = await self.generate_embeddings([test_text])
+        
+        # Update database
+        test.embedding = embedding[0].tobytes()
+        await db.commit()
+
+# Global instance
+nlp_service = NLPService()
+```
+
+### **✅ Database Schema for Embeddings**
+```sql
+-- Add embedding column to test_specifications table
+ALTER TABLE test_specifications 
+ADD COLUMN embedding vector(384); -- 384 dimensions for all-MiniLM-L6-v2
+
+-- Create index for similarity search
+CREATE INDEX ON test_specifications 
+USING ivfflat (embedding vector_cosine_ops) 
+WITH (lists = 100);
+```
+
+### **✅ NLP API Endpoints**
+```python
+# backend/app/api/ai.py
+from fastapi import APIRouter, Depends, HTTPException, BackgroundTasks
+from sqlalchemy.ext.asyncio import AsyncSession
+from app.database import get_db
+from app.services.nlp_service import nlp_service
+from app.schemas.ai import MatchingRequest, MatchingResponse, MatchingJob
+
+router = APIRouter()
+
+@router.post("/match-requirements", response_model=MatchingJob)
+async def match_requirements(
+    request: MatchingRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    """Start background matching process for requirements"""
+    try:
+        # Create job record
+        job = MatchingJob(
+            id=str(uuid.uuid4()),
+            status="processing",
+            requirement_ids=request.requirement_ids,
+            threshold=request.threshold
+        )
+        
+        # Start background task
+        background_tasks.add_task(
+            process_requirement_matching,
+            job.id,
+            request.requirement_ids,
+            request.threshold
+        )
+        
+        return job
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/match-status/{job_id}", response_model=MatchingResponse)
+async def get_matching_status(
+    job_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get status and results of matching job"""
+    # Implementation to get job status from database or cache
+    pass
+
+async def process_requirement_matching(
+    job_id: str,
+    requirement_ids: List[str],
+    threshold: float
+):
+    """Background task for processing requirement matching"""
+    # Implementation for background processing
+    pass
+```
+
+## **Local LLM Service for Test Generation (CRITICAL RULES)**
+
+### **✅ LLM Service Architecture**
+```python
+# backend/app/services/llm_service.py
+from typing import List, Dict, Any, Optional
+import httpx
+import asyncio
+import json
+from datetime import datetime
+from app.config import settings
+from app.models.test_spec import TestSpecification
+from app.models.parameter import Parameter, GenericCommand
+from app.schemas.ai import GenerationRequest, GenerationResponse
+
+class LLMService:
+    def __init__(self):
+        self.server_url = settings.LLM_SERVER_URL
+        self.client = httpx.AsyncClient(timeout=300.0)  # 5 minutes timeout
+        self.prompt_templates = self._load_prompt_templates()
+    
+    def _load_prompt_templates(self) -> Dict[str, str]:
+        """Load prompt templates for different test types"""
+        return {
+            "UDS": """
+You are an expert automotive test engineer. Generate a test specification for UDS (Unified Diagnostic Services) testing.
+
+Requirements:
+{requirements}
+
+Available Parameters:
+{parameters}
+
+Available Generic Commands:
+{commands}
+
+Generate a test specification that:
+1. Uses ONLY the provided Generic Commands for actions and expected results
+2. Uses ONLY the provided Parameters
+3. Follows automotive testing best practices
+4. Is specific and actionable
+
+Return the response in JSON format:
+{{
+    "name": "Test Name",
+    "description": "Test Description",
+    "precondition": "Precondition",
+    "test_steps": [
+        {{
+            "action": {{
+                "command_id": "command_id",
+                "populated_parameters": {{"param1": "value1"}}
+            }},
+            "expected_result": {{
+                "command_id": "command_id", 
+                "populated_parameters": {{"param1": "value1"}}
+            }},
+            "description": "Step description",
+            "sequence_number": 1
+        }}
+    ],
+    "postcondition": "Postcondition"
+}}
+""",
+            "Communication": """
+You are an expert automotive test engineer. Generate a test specification for Communication testing (CAN, FlexRay).
+
+Requirements:
+{requirements}
+
+Available Parameters:
+{parameters}
+
+Available Generic Commands:
+{commands}
+
+Generate a test specification following the same JSON format as UDS tests.
+""",
+            "ErrorHandler": """
+You are an expert automotive test engineer. Generate a test specification for Error Handler testing.
+
+Requirements:
+{requirements}
+
+Available Parameters:
+{parameters}
+
+Available Generic Commands:
+{commands}
+
+Generate a test specification following the same JSON format as UDS tests.
+""",
+            "CyberSecurity": """
+You are an expert automotive test engineer. Generate a test specification for Cyber Security testing.
+
+Requirements:
+{requirements}
+
+Available Parameters:
+{parameters}
+
+Available Generic Commands:
+{commands}
+
+Generate a test specification following the same JSON format as UDS tests.
+"""
+        }
+    
+    async def generate_test_specification(
+        self,
+        db: AsyncSession,
+        request: GenerationRequest
+    ) -> GenerationResponse:
+        """Generate test specification using local LLM"""
+        try:
+            # Get requirements
+            requirements = await self._get_requirements(db, request.requirement_ids)
+            
+            # Get available parameters and commands
+            parameters = await self._get_parameters(db)
+            commands = await self._get_commands(db)
+            
+            # Determine functional area
+            functional_area = self._determine_functional_area(requirements)
+            
+            # Build prompt
+            prompt = self._build_prompt(
+                requirements, parameters, commands, functional_area
+            )
+            
+            # Call LLM
+            response = await self._call_llm(prompt)
+            
+            # Parse and validate response
+            test_spec = self._parse_llm_response(response)
+            
+            # Validate against available parameters and commands
+            self._validate_generated_test(test_spec, parameters, commands)
+            
+            return GenerationResponse(
+                id=str(uuid.uuid4()),
+                status="completed",
+                test_specification=test_spec,
+                confidence=self._calculate_confidence(test_spec),
+                generated_at=datetime.utcnow()
+            )
+            
+        except Exception as e:
+            return GenerationResponse(
+                id=str(uuid.uuid4()),
+                status="failed",
+                error=str(e),
+                generated_at=datetime.utcnow()
+            )
+    
+    async def _get_requirements(
+        self, 
+        db: AsyncSession, 
+        requirement_ids: List[str]
+    ) -> List[Dict[str, Any]]:
+        """Get requirements from database"""
+        from app.models.requirement import Requirement
+        
+        result = await db.execute(
+            select(Requirement).where(Requirement.id.in_(requirement_ids))
+        )
+        requirements = result.scalars().all()
+        
+        return [
+            {
+                "id": str(req.id),
+                "title": req.title,
+                "description": req.description,
+                "category": req.category.name if req.category else None
+            }
+            for req in requirements
+        ]
+    
+    async def _get_parameters(self, db: AsyncSession) -> List[Dict[str, Any]]:
+        """Get all active parameters"""
+        from app.models.parameter import Parameter
+        
+        result = await db.execute(
+            select(Parameter).where(Parameter.is_active == True)
+        )
+        parameters = result.scalars().all()
+        
+        return [
+            {
+                "id": str(param.id),
+                "name": param.name,
+                "category": param.category.name if param.category else None,
+                "has_variants": param.has_variants,
+                "default_value": param.default_value,
+                "variants": [
+                    {
+                        "manufacturer": variant.manufacturer,
+                        "value": variant.value
+                    }
+                    for variant in param.variants
+                ] if param.has_variants else []
+            }
+            for param in parameters
+        ]
+    
+    async def _get_commands(self, db: AsyncSession) -> List[Dict[str, Any]]:
+        """Get all active generic commands"""
+        from app.models.command import GenericCommand
+        
+        result = await db.execute(
+            select(GenericCommand).where(GenericCommand.is_active == True)
+        )
+        commands = result.scalars().all()
+        
+        return [
+            {
+                "id": str(cmd.id),
+                "template": cmd.template,
+                "category": cmd.category.name if cmd.category else None,
+                "required_parameters": [
+                    param.name for param in cmd.required_parameters
+                ]
+            }
+            for cmd in commands
+        ]
+    
+    def _determine_functional_area(self, requirements: List[Dict[str, Any]]) -> str:
+        """Determine functional area based on requirements"""
+        # Simple heuristic - can be improved with ML
+        for req in requirements:
+            if req.get("category"):
+                category = req["category"].lower()
+                if "uds" in category:
+                    return "UDS"
+                elif "communication" in category or "can" in category:
+                    return "Communication"
+                elif "error" in category:
+                    return "ErrorHandler"
+                elif "security" in category or "cyber" in category:
+                    return "CyberSecurity"
+        
+        return "UDS"  # Default
+    
+    def _build_prompt(
+        self,
+        requirements: List[Dict[str, Any]],
+        parameters: List[Dict[str, Any]],
+        commands: List[Dict[str, Any]],
+        functional_area: str
+    ) -> str:
+        """Build prompt for LLM"""
+        template = self.prompt_templates.get(functional_area, self.prompt_templates["UDS"])
+        
+        requirements_text = "\n".join([
+            f"- {req['title']}: {req['description']}"
+            for req in requirements
+        ])
+        
+        parameters_text = "\n".join([
+            f"- {param['name']} ({param['category']}): {param['default_value']}"
+            for param in parameters
+        ])
+        
+        commands_text = "\n".join([
+            f"- {cmd['template']} (Category: {cmd['category']})"
+            for cmd in commands
+        ])
+        
+        return template.format(
+            requirements=requirements_text,
+            parameters=parameters_text,
+            commands=commands_text
+        )
+    
+    async def _call_llm(self, prompt: str) -> str:
+        """Call local LLM server"""
+        try:
+            response = await self.client.post(
+                f"{self.server_url}/generate",
+                json={
+                    "prompt": prompt,
+                    "max_tokens": 2048,
+                    "temperature": 0.7,
+                    "top_p": 0.9
+                }
+            )
+            response.raise_for_status()
+            return response.json()["text"]
+        except httpx.HTTPError as e:
+            raise Exception(f"LLM server error: {str(e)}")
+    
+    def _parse_llm_response(self, response: str) -> Dict[str, Any]:
+        """Parse LLM response and extract JSON"""
+        try:
+            # Try to find JSON in response
+            start = response.find("{")
+            end = response.rfind("}") + 1
+            
+            if start == -1 or end == 0:
+                raise ValueError("No JSON found in response")
+            
+            json_str = response[start:end]
+            return json.loads(json_str)
+        except (json.JSONDecodeError, ValueError) as e:
+            raise Exception(f"Failed to parse LLM response: {str(e)}")
+    
+    def _validate_generated_test(
+        self,
+        test_spec: Dict[str, Any],
+        parameters: List[Dict[str, Any]],
+        commands: List[Dict[str, Any]]
+    ):
+        """Validate generated test against available parameters and commands"""
+        # Check if all used commands exist
+        used_commands = set()
+        for step in test_spec.get("test_steps", []):
+            if "action" in step and "command_id" in step["action"]:
+                used_commands.add(step["action"]["command_id"])
+            if "expected_result" in step and "command_id" in step["expected_result"]:
+                used_commands.add(step["expected_result"]["command_id"])
+        
+        available_commands = {cmd["id"] for cmd in commands}
+        invalid_commands = used_commands - available_commands
+        
+        if invalid_commands:
+            raise ValueError(f"Invalid command IDs: {invalid_commands}")
+        
+        # Check if all used parameters exist
+        used_parameters = set()
+        for step in test_spec.get("test_steps", []):
+            for field in ["action", "expected_result"]:
+                if field in step and "populated_parameters" in step[field]:
+                    used_parameters.update(step[field]["populated_parameters"].keys())
+        
+        available_parameters = {param["name"] for param in parameters}
+        invalid_parameters = used_parameters - available_parameters
+        
+        if invalid_parameters:
+            raise ValueError(f"Invalid parameter names: {invalid_parameters}")
+    
+    def _calculate_confidence(self, test_spec: Dict[str, Any]) -> str:
+        """Calculate confidence level for generated test"""
+        # Simple heuristic - can be improved
+        steps_count = len(test_spec.get("test_steps", []))
+        
+        if steps_count >= 5 and test_spec.get("description") and test_spec.get("precondition"):
+            return "high"
+        elif steps_count >= 3:
+            return "medium"
+        else:
+            return "low"
+
+# Global instance
+llm_service = LLMService()
+```
+
+### **✅ LLM API Endpoints**
+```python
+# backend/app/api/ai.py (continued)
+@router.post("/generate-test", response_model=GenerationJob)
+async def generate_test(
+    request: GenerationRequest,
+    background_tasks: BackgroundTasks,
+    db: AsyncSession = Depends(get_db)
+):
+    """Start background test generation process"""
+    try:
+        # Create job record
+        job = GenerationJob(
+            id=str(uuid.uuid4()),
+            status="processing",
+            requirement_ids=request.requirement_ids,
+            functional_area=request.functional_area
+        )
+        
+        # Start background task
+        background_tasks.add_task(
+            process_test_generation,
+            job.id,
+            request.requirement_ids,
+            request.functional_area
+        )
+        
+        return job
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/generate-status/{job_id}", response_model=GenerationResponse)
+async def get_generation_status(
+    job_id: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Get status and results of generation job"""
+    # Implementation to get job status from database or cache
+    pass
+
+async def process_test_generation(
+    job_id: str,
+    requirement_ids: List[str],
+    functional_area: Optional[str]
+):
+    """Background task for processing test generation"""
+    # Implementation for background processing
+    pass
+```
+
+## **Local LLM Infrastructure Setup (CRITICAL)**
+
+### **✅ Hardware Requirements**
+- **GPU**: NVIDIA RTX 4090 or A100 (minimum 24GB VRAM)
+- **RAM**: 64GB+ system RAM
+- **Storage**: 1TB+ SSD for models and data
+- **CPU**: 16+ cores for preprocessing
+
+### **✅ Software Setup**
+```bash
+# Install Text Generation Inference (TGI)
+pip install text-generation-inference
+
+# Download and serve CodeLlama-7b
+text-generation-launcher \
+  --model-id codellama/CodeLlama-7b-Instruct-hf \
+  --port 8001 \
+  --max-total-tokens 4096 \
+  --max-input-length 2048 \
+  --max-batch-total-tokens 8192 \
+  --max-batch-prefill-tokens 4096 \
+  --dtype float16 \
+  --quantize bitsandbytes-nf4
+```
+
+### **✅ Security Configuration**
+```python
+# backend/app/config.py (LLM section)
+class Settings(BaseSettings):
+    # LLM Configuration
+    LLM_SERVER_URL: str = "http://localhost:8001"
+    LLM_SERVER_API_KEY: Optional[str] = None  # For authentication if needed
+    LLM_MAX_TOKENS: int = 2048
+    LLM_TEMPERATURE: float = 0.7
+    LLM_TOP_P: float = 0.9
+    
+    # Security
+    LLM_ALLOWED_IPS: List[str] = ["127.0.0.1", "localhost"]
+    LLM_RATE_LIMIT: int = 10  # requests per minute per user
+```
+
+## **AI Service Schemas (CRITICAL RULES)**
+
+### **✅ Pydantic Schemas**
+```python
+# backend/app/schemas/ai.py
+from pydantic import BaseModel, Field
+from typing import List, Optional, Dict, Any
+from datetime import datetime
+from enum import Enum
+
+class FunctionalArea(str, Enum):
+    UDS = "UDS"
+    COMMUNICATION = "Communication"
+    ERROR_HANDLER = "ErrorHandler"
+    CYBER_SECURITY = "CyberSecurity"
+
+class ConfidenceLevel(str, Enum):
+    HIGH = "high"
+    MEDIUM = "medium"
+    LOW = "low"
+
+class MatchingRequest(BaseModel):
+    requirement_ids: List[str] = Field(..., min_items=1)
+    threshold: float = Field(0.7, ge=0.0, le=1.0)
+    limit: int = Field(10, ge=1, le=50)
+
+class MatchingResponse(BaseModel):
+    test_id: str
+    name: str
+    description: str
+    similarity_score: float
+    confidence: ConfidenceLevel
+    functional_area: FunctionalArea
+
+class MatchingJob(BaseModel):
+    id: str
+    status: str  # "processing", "completed", "failed"
+    requirement_ids: List[str]
+    threshold: float
+    results: Optional[List[MatchingResponse]] = None
+    error: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+
+class GenerationRequest(BaseModel):
+    requirement_ids: List[str] = Field(..., min_items=1)
+    functional_area: Optional[FunctionalArea] = None
+
+class TestStepGenerated(BaseModel):
+    action: Dict[str, Any]  # GenericCommand reference with populated parameters
+    expected_result: Dict[str, Any]  # GenericCommand reference with populated parameters
+    description: Optional[str] = None
+    sequence_number: int
+
+class TestSpecificationGenerated(BaseModel):
+    name: str
+    description: str
+    precondition: str
+    test_steps: List[TestStepGenerated]
+    postcondition: str
+
+class GenerationResponse(BaseModel):
+    id: str
+    status: str  # "completed", "failed"
+    test_specification: Optional[TestSpecificationGenerated] = None
+    confidence: Optional[ConfidenceLevel] = None
+    error: Optional[str] = None
+    generated_at: datetime
+
+class GenerationJob(BaseModel):
+    id: str
+    status: str  # "processing", "completed", "failed"
+    requirement_ids: List[str]
+    functional_area: Optional[FunctionalArea]
+    result: Optional[GenerationResponse] = None
+    error: Optional[str] = None
+    created_at: datetime
+    completed_at: Optional[datetime] = None
+```
+
+## **Implementation Checklist**
+
+### **Before Starting AI Service Tasks:**
+- [ ] **Verify LLM server** is running and accessible
+- [ ] **Check pgvector extension** is installed in PostgreSQL
+- [ ] **Ensure embedding model** is downloaded and cached
+- [ ] **Test database connections** for vector operations
+- [ ] **Validate prompt templates** are comprehensive
+- [ ] **Set up proper error handling** for AI operations
+- [ ] **Implement rate limiting** for AI endpoints
+
+### **AI Service Quality Checks:**
+- [ ] **Embeddings are generated** correctly
+- [ ] **Similarity search** returns relevant results
+- [ ] **LLM responses** are properly parsed
+- [ ] **Generated tests** use only available commands/parameters
+- [ ] **Confidence scores** are calculated accurately
+- [ ] **Background processing** works correctly
+- [ ] **Error handling** covers all failure cases
+- [ ] **Performance** is acceptable for production use
+
+### **Security Checklist:**
+- [ ] **LLM server** is properly secured
+- [ ] **API endpoints** have proper validation
+- [ ] **Rate limiting** is implemented
+- [ ] **Input sanitization** prevents injection attacks
+- [ ] **Error messages** don't leak sensitive information
+- [ ] **Logging** doesn't expose confidential data
+
+---
+
+**Remember**: AI services are critical components that require careful testing and validation. Always ensure proper error handling and security measures are in place.

@@ -1,0 +1,393 @@
+---
+description: TestSpecAI Project Structure and Architecture Guidelines
+globs: **/*
+alwaysApply: true
+---
+
+# TestSpecAI Project Structure & Architecture Rules
+
+## **Project Overview**
+TestSpecAI is a web application for creating standardized automotive test specifications using AI (NLP + Local LLM) with standardized Parameters and Generic Commands.
+
+## **Technology Stack (FINAL - No Changes)**
+
+### **Backend**
+- **Framework**: FastAPI (Python 3.11+)
+- **Database ORM**: SQLAlchemy 2.0 (async)
+- **Validation**: Pydantic v2
+- **Database**: SQLite (dev), PostgreSQL 15+ with pgvector (prod)
+- **AI Libraries**: Hugging Face Transformers, sentence-transformers
+- **Document Processing**: python-docx, PyPDF2, openpyxl
+
+### **Frontend**
+- **Framework**: React.js 18+ with TypeScript
+- **UI Library**: Ant Design Pro
+- **State Management**: Zustand
+- **Styling**: styled-components
+- **Build Tool**: Vite
+- **Testing**: Vitest + React Testing Library
+
+### **Infrastructure**
+- **Development**: Native Python venv + Node.js
+- **Production**: Simple VPS/cloud instance with Nginx + systemd
+- **No Docker, No CI/CD** (explicitly excluded)
+
+## **Project Structure (MANDATORY)**
+
+```
+TestSpecAI/
+├── backend/                    # FastAPI Backend
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py            # FastAPI application entry point
+│   │   ├── config.py          # Configuration management
+│   │   ├── database.py        # Database connection setup
+│   │   ├── models/            # SQLAlchemy models
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py        # Base model class
+│   │   │   ├── requirement.py
+│   │   │   ├── test_spec.py
+│   │   │   ├── parameter.py
+│   │   │   ├── command.py
+│   │   │   └── category.py
+│   │   ├── schemas/           # Pydantic schemas
+│   │   │   ├── __init__.py
+│   │   │   ├── requirement.py
+│   │   │   ├── test_spec.py
+│   │   │   ├── parameter.py
+│   │   │   └── command.py
+│   │   ├── api/               # API routes
+│   │   │   ├── __init__.py
+│   │   │   ├── requirements.py
+│   │   │   ├── test_specs.py
+│   │   │   ├── parameters.py
+│   │   │   └── commands.py
+│   │   ├── services/          # Business logic
+│   │   │   ├── __init__.py
+│   │   │   ├── requirement_service.py
+│   │   │   ├── test_spec_service.py
+│   │   │   ├── parameter_service.py
+│   │   │   ├── command_service.py
+│   │   │   ├── document_service.py
+│   │   │   ├── nlp_service.py
+│   │   │   └── llm_service.py
+│   │   ├── crud/              # Database operations
+│   │   │   ├── __init__.py
+│   │   │   ├── base.py
+│   │   │   ├── requirement.py
+│   │   │   ├── test_spec.py
+│   │   │   ├── parameter.py
+│   │   │   └── command.py
+│   │   └── utils/             # Utility functions
+│   │       ├── __init__.py
+│   │       ├── exceptions.py
+│   │       └── helpers.py
+│   ├── alembic/               # Database migrations
+│   ├── tests/                 # Backend tests
+│   ├── requirements.txt       # Python dependencies
+│   └── .env.example          # Environment variables template
+├── frontend/                  # React Frontend
+│   ├── public/
+│   ├── src/
+│   │   ├── components/        # Reusable UI components
+│   │   │   ├── common/        # Generic components
+│   │   │   ├── requirements/  # Requirements-specific components
+│   │   │   ├── testSpecs/     # Test spec components
+│   │   │   ├── parameters/    # Parameter components
+│   │   │   ├── commands/      # Command components
+│   │   │   └── ai/           # AI-related components
+│   │   ├── pages/            # Page components
+│   │   │   ├── RequirementsPage.tsx
+│   │   │   ├── TestSpecsPage.tsx
+│   │   │   ├── ParametersPage.tsx
+│   │   │   ├── CommandsPage.tsx
+│   │   │   └── DashboardPage.tsx
+│   │   ├── services/         # API services
+│   │   │   ├── api.ts
+│   │   │   ├── requirements.ts
+│   │   │   ├── testSpecs.ts
+│   │   │   ├── parameters.ts
+│   │   │   └── commands.ts
+│   │   ├── stores/           # Zustand stores
+│   │   │   ├── requirementsStore.ts
+│   │   │   ├── testSpecsStore.ts
+│   │   │   ├── parametersStore.ts
+│   │   │   └── commandsStore.ts
+│   │   ├── hooks/            # Custom React hooks
+│   │   │   ├── useRequirements.ts
+│   │   │   ├── useTestSpecs.ts
+│   │   │   ├── useParameters.ts
+│   │   │   └── useCommands.ts
+│   │   ├── types/            # TypeScript type definitions
+│   │   │   ├── api.ts
+│   │   │   ├── requirements.ts
+│   │   │   ├── testSpecs.ts
+│   │   │   ├── parameters.ts
+│   │   │   └── commands.ts
+│   │   ├── utils/            # Utility functions
+│   │   │   ├── constants.ts
+│   │   │   ├── helpers.ts
+│   │   │   └── validation.ts
+│   │   ├── styles/           # Global styles
+│   │   │   ├── globals.css
+│   │   │   └── theme.ts
+│   │   ├── App.tsx
+│   │   ├── main.tsx
+│   │   └── vite-env.d.ts
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── tsconfig.json
+│   └── .env.example
+├── .taskmaster/              # Task management
+├── docs/                     # Project documentation
+├── README.md
+├── .gitignore
+└── .cursor/                  # Cursor IDE configuration
+    └── rules/
+```
+
+## **Data Models (CRITICAL - Must Follow Exactly)**
+
+### **Core Entities**
+```python
+# Requirement Model
+class Requirement:
+    id: UUID
+    title: str
+    description: text
+    categoryId: UUID (reference to RequirementCategory)
+    source: str (document path or "manual")
+    metadata: dict
+    createdBy: str
+    createdAt: datetime
+    updatedAt: datetime
+
+# TestSpecification Model  
+class TestSpecification:
+    id: UUID
+    name: str
+    description: text
+    requirementIds: List[UUID] (one-to-many relationship)
+    precondition: text
+    testSteps: List[TestStep]
+    postcondition: text
+    testDataDescription: dict (parameter-variant pairs)
+    functionalArea: enum (UDS, Communication, ErrorHandler, CyberSecurity)
+    createdBy: str
+    createdAt: datetime
+    updatedAt: datetime
+
+# TestStep Model
+class TestStep:
+    id: UUID
+    testSpecificationId: UUID
+    action: GenericCommand reference with populated parameters
+    expectedResult: GenericCommand reference with populated parameters
+    description: text (optional)
+    sequenceNumber: int
+
+# Parameter Model
+class Parameter:
+    id: UUID
+    name: str
+    categoryId: UUID (reference to ParameterCategory)
+    hasVariants: bool
+    defaultValue: str (for parameters without variants)
+    variants: List[ParameterVariant]
+    description: text
+    isActive: bool
+
+# ParameterVariant Model
+class ParameterVariant:
+    id: UUID
+    parameterId: UUID
+    manufacturer: str (e.g., "BMW", "VW")
+    value: str
+    description: text
+
+# GenericCommand Model
+class GenericCommand:
+    id: UUID
+    template: str (e.g., "Set level of authentication {Authentication}")
+    categoryId: UUID (reference to CommandCategory)
+    requiredParameters: List[parameter category references]
+    description: text
+
+# Category Models (User-defined)
+class ParameterCategory:
+    id: UUID
+    name: str (e.g., "Authentication", "Engine Parameters", "UDS_DID")
+    description: text
+    createdBy: str
+    createdAt: datetime
+    isActive: bool
+
+class CommandCategory:
+    id: UUID
+    name: str (e.g., "UDS", "CAN", "FlexRay", "Error Handling")
+    description: text
+    createdBy: str
+    createdAt: datetime
+    isActive: bool
+```
+
+## **API Design Rules (MANDATORY)**
+
+### **Base URL Structure**
+- **Base URL**: `/api/v1`
+- **Authentication**: None (explicitly out of scope)
+
+### **Endpoint Patterns**
+```python
+# Requirements
+GET    /api/v1/requirements
+POST   /api/v1/requirements
+GET    /api/v1/requirements/{id}
+PUT    /api/v1/requirements/{id}
+DELETE /api/v1/requirements/{id}
+GET    /api/v1/requirements/categories
+
+# Test Specifications
+GET    /api/v1/test-specifications
+POST   /api/v1/test-specifications
+GET    /api/v1/test-specifications/{id}
+PUT    /api/v1/test-specifications/{id}
+DELETE /api/v1/test-specifications/{id}
+GET    /api/v1/test-specifications/{id}/steps
+POST   /api/v1/test-specifications/{id}/steps
+
+# Parameters
+GET    /api/v1/parameters
+POST   /api/v1/parameters
+GET    /api/v1/parameters/{id}
+PUT    /api/v1/parameters/{id}
+DELETE /api/v1/parameters/{id}
+GET    /api/v1/parameters/categories
+POST   /api/v1/parameters/categories
+GET    /api/v1/parameters/{id}/variants
+POST   /api/v1/parameters/{id}/variants
+
+# Commands
+GET    /api/v1/commands
+POST   /api/v1/commands
+GET    /api/v1/commands/{id}
+PUT    /api/v1/commands/{id}
+DELETE /api/v1/commands/{id}
+GET    /api/v1/commands/categories
+POST   /api/v1/commands/categories
+
+# AI Services
+POST   /api/v1/ai/match-requirements
+GET    /api/v1/ai/match-status/{job_id}
+POST   /api/v1/ai/generate-test
+GET    /api/v1/ai/generate-status/{job_id}
+
+# Document Processing
+POST   /api/v1/documents/upload
+GET    /api/v1/documents/process-status/{job_id}
+```
+
+## **Implementation Checklist (CRITICAL)**
+
+### **Backend Implementation Order**
+1. ✅ **Task 1**: Setup Project Repository and Development Environment
+2. ✅ **Task 2**: Configure Backend Framework and Database Connection
+3. ✅ **Task 3**: Implement Database Models with SQLAlchemy
+4. ✅ **Task 4**: Create Pydantic Schemas for API Validation
+5. ✅ **Task 5**: Implement CRUD Operations for Core Entities
+6. ✅ **Task 6**: Develop API Endpoints for Requirements Management
+7. ✅ **Task 7**: Develop API Endpoints for Test Specifications
+8. ✅ **Task 8**: Develop API Endpoints for Parameters and Variants
+9. ✅ **Task 9**: Develop API Endpoints for Generic Commands
+10. ✅ **Task 10**: Implement Document Processing Service
+11. ✅ **Task 11**: Implement NLP Service for Test Matching
+12. ✅ **Task 12**: Implement Local LLM Service for Test Generation
+
+### **Frontend Implementation Order**
+13. ✅ **Task 13**: Set Up Frontend Development Environment
+14. ✅ **Task 14**: Implement Frontend Layout and Navigation
+15. ✅ **Task 15**: Implement Requirements Management UI
+16. ✅ **Task 16**: Implement Test Specification Editor UI
+17. ✅ **Task 17**: Implement Parameter and Command Management UI
+18. ✅ **Task 18**: Implement AI Results Dashboard UI
+19. ✅ **Task 19**: Implement API Integration Services
+20. ✅ **Task 20**: Implement State Management with Zustand
+21. ✅ **Task 21**: Implement Custom React Hooks
+22. ✅ **Task 22**: Implement Advanced UI Components
+
+### **Production & Quality**
+24. ✅ **Task 24**: Implement Error Handling and Logging
+25. ✅ **Task 25**: Implement Production Deployment Configuration
+
+## **Critical Implementation Rules**
+
+### **✅ DO:**
+- **Follow exact folder structure** as specified above
+- **Use async/await** for all database operations (SQLAlchemy 2.0)
+- **Implement proper error handling** with structured responses
+- **Use Pydantic v2** for all API validation
+- **Follow RESTful conventions** for API endpoints
+- **Implement proper TypeScript types** for all frontend components
+- **Use Zustand** for state management (no Redux)
+- **Use Ant Design Pro** components (no custom UI library)
+- **Implement proper logging** with structured format
+- **Follow dependency order** - don't skip tasks
+
+### **❌ DON'T:**
+- **Don't implement authentication** (explicitly out of scope)
+- **Don't use Docker** (explicitly excluded)
+- **Don't use CI/CD** (explicitly excluded)
+- **Don't change technology stack** (finalized in PRD)
+- **Don't skip database migrations** (use Alembic)
+- **Don't use external LLM APIs** (use local LLM only)
+- **Don't implement predefined categories** (user-defined only)
+- **Don't use free text** in TestSteps (only Generic Commands)
+
+## **Quality Assurance Checklist**
+
+### **Before Marking Task Complete:**
+- [ ] **Code follows project structure** exactly
+- [ ] **All imports are correct** and files exist
+- [ ] **Database models** match PRD specifications
+- [ ] **API endpoints** follow RESTful conventions
+- [ ] **Error handling** is implemented
+- [ ] **TypeScript types** are properly defined
+- [ ] **Tests pass** (if applicable)
+- [ ] **Documentation updated** (if needed)
+- [ ] **No hardcoded values** (use configuration)
+- [ ] **Proper logging** implemented
+
+### **Integration Checklist:**
+- [ ] **Backend API** responds correctly
+- [ ] **Frontend components** render without errors
+- [ ] **Database connections** work in both dev/prod
+- [ ] **AI services** integrate properly
+- [ ] **File uploads** work correctly
+- [ ] **State management** updates correctly
+- [ ] **Error boundaries** catch errors
+- [ ] **Responsive design** works on all screen sizes
+
+## **Common Pitfalls to Avoid**
+
+1. **❌ Wrong folder structure** - Always check against this document
+2. **❌ Missing async/await** - All database operations must be async
+3. **❌ Hardcoded API URLs** - Use environment variables
+4. **❌ Missing error handling** - Every API endpoint needs proper error handling
+5. **❌ Inconsistent naming** - Follow Python/TypeScript conventions
+6. **❌ Missing TypeScript types** - All components need proper typing
+7. **❌ Skipping migrations** - Always use Alembic for database changes
+8. **❌ Using external APIs** - LLM must be local only
+9. **❌ Implementing auth** - Authentication is out of scope
+10. **❌ Using wrong UI library** - Only Ant Design Pro allowed
+
+## **Emergency Contacts & Resources**
+
+- **PRD Document**: `.taskmaster/docs/prd.txt`
+- **Task Management**: Use Taskmaster tools for tracking
+- **Database Schema**: Check models in `backend/app/models/`
+- **API Documentation**: Auto-generated by FastAPI at `/docs`
+- **Frontend Types**: Check `frontend/src/types/`
+
+---
+
+**Remember**: This document is the single source of truth for project structure and implementation rules. Always refer to it before starting any task implementation.

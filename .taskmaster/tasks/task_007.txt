@@ -25,3 +25,56 @@ Technology recommendations:
 
 # Test Strategy:
 Write API tests using pytest and TestClient. Test all endpoints with valid and invalid data. Verify proper error responses. Test the relationship between test specifications and steps. Verify that step sequence is maintained correctly.
+
+# Subtasks:
+## 1. Implement Test Specification Core Endpoints [pending]
+### Dependencies: None
+### Description: Create the router and implement the core CRUD endpoints for test specifications
+### Details:
+1. Create test-specs router with proper path prefix
+2. Implement GET /test-specs endpoint with filtering and pagination
+3. Implement POST /test-specs for creating new test specifications
+4. Implement GET /test-specs/{id} for retrieving specific test specifications
+5. Implement proper validation for test specification data
+6. Add error handling for invalid requests
+
+## 2. Implement Test Specification Update and Delete Endpoints [pending]
+### Dependencies: 7.1
+### Description: Implement endpoints for updating and deleting test specifications
+### Details:
+1. Implement PUT /test-specs/{id} for updating test specifications
+2. Implement DELETE /test-specs/{id} for deleting test specifications
+3. Add validation to ensure test specification exists before update/delete
+4. Implement proper error handling for non-existent resources
+5. Add transaction management for update operations
+
+## 3. Implement Test Steps Retrieval Endpoints [pending]
+### Dependencies: 7.1
+### Description: Implement endpoints for retrieving test steps associated with test specifications
+### Details:
+1. Implement GET /test-specs/{id}/steps for retrieving all test steps
+2. Add filtering capabilities for test steps
+3. Implement pagination for test steps
+4. Add validation to ensure test specification exists
+5. Implement proper error handling for invalid requests
+
+## 4. Implement Test Steps Creation Endpoint [pending]
+### Dependencies: 7.3
+### Description: Implement endpoint for adding new test steps to test specifications
+### Details:
+1. Implement POST /test-specs/{id}/steps for adding test steps
+2. Add validation for step sequence numbers
+3. Implement automatic reordering of steps when inserting in the middle
+4. Add transaction management for multi-step operations
+5. Implement proper error handling for invalid step data
+
+## 5. Implement Test Steps Update and Delete Endpoints [pending]
+### Dependencies: 7.3, 7.4
+### Description: Implement endpoints for updating and deleting test steps
+### Details:
+1. Implement PUT /test-specs/{id}/steps/{step_id} for updating test steps
+2. Implement DELETE /test-specs/{id}/steps/{step_id} for deleting test steps
+3. Add validation to ensure test step exists before update/delete
+4. Implement sequence reordering after deletion
+5. Add transaction management for update and delete operations
+
