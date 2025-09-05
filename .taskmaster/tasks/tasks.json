@@ -294,7 +294,7 @@
         "dependencies": [
           3
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -302,7 +302,7 @@
             "description": "Develop a base CRUD class with common operations that all entity-specific CRUD classes will inherit from",
             "dependencies": [],
             "details": "Implement a BaseCRUD class with async methods for create, read, update, delete, list, and count operations. Include support for filtering, sorting, and pagination. Implement proper error handling and validation. Use SQLAlchemy 2.0+ async query API and leverage session management for transactions.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write unit tests for the BaseCRUD class with mock entities. Test all CRUD operations, filtering, sorting, and pagination. Verify transaction management and error handling."
           },
           {
@@ -313,7 +313,7 @@
               "5.1"
             ],
             "details": "Create specialized CRUD classes for Requirements, TestSpecification, and Category entities by extending the BaseCRUD class. Implement entity-specific validation rules and relationships. Add methods for retrieving related entities (e.g., get requirements by category). Implement proper error handling for constraint violations.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write unit tests for each entity CRUD class. Test all operations with valid and invalid data. Verify relationship handling and constraint enforcement. Test retrieval of related entities."
           },
           {
@@ -324,7 +324,7 @@
               "5.1"
             ],
             "details": "Create specialized CRUD classes for Parameter, ParameterVariant, and GenericCommand entities. Implement proper relationship handling between Parameters and their Variants. Add methods for retrieving commands by category. Implement validation for command templates and parameter constraints.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write unit tests for Parameter, ParameterVariant, and GenericCommand CRUD operations. Test relationship handling between Parameters and Variants. Verify command template validation and parameter constraints."
           },
           {
@@ -337,7 +337,7 @@
               "5.3"
             ],
             "details": "Enhance the CRUD operations with advanced filtering capabilities (e.g., text search, date ranges, multiple conditions). Implement efficient sorting mechanisms using SQLAlchemy's order_by(). Add pagination support using limit() and offset(). Implement search functionality across multiple fields. Optimize queries for performance.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test advanced filtering with complex conditions. Verify sorting with multiple criteria. Test pagination with various page sizes. Measure query performance with large datasets. Test search functionality with partial matches."
           },
           {
@@ -351,7 +351,7 @@
               "5.4"
             ],
             "details": "Implement transaction management using SQLAlchemy's session.begin(). Create methods for operations that modify multiple entities atomically. Use with_for_update() for locking when needed to prevent race conditions. Implement proper error handling and rollback on failures. Add support for bulk operations within transactions for better performance.",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test transaction rollback on errors. Verify that complex operations are atomic. Test concurrent operations to ensure data integrity. Verify locking prevents race conditions. Test bulk operations within transactions."
           }
         ]
@@ -1684,7 +1684,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T10:13:14.481Z",
-      "updated": "2025-09-05T12:03:33.013Z",
+      "updated": "2025-09-05T12:17:51.961Z",
       "description": "Tasks for master context"
     }
   }
