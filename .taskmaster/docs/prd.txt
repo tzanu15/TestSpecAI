@@ -1,0 +1,951 @@
+<context>
+# Overview  
+TestSpecAI is a specialized web application designed for automotive test engineers to standardize and accelerate the creation of test specifications. The application addresses the critical problem of time waste in analyzing requirements and matching them with existing tests. By leveraging AI technology (NLP for intelligent matching and LLM for draft generation), TestSpecAI enables test engineers to quickly identify existing tests for new requirements and generate standardized test drafts, significantly reducing manual effort and ensuring consistency across automotive testing processes.
+
+The application targets 20-30 internal test engineers working on automotive systems, focusing specifically on requirements-based testing across four key functional areas: UDS testing, Communication protocols (CAN, FlexRay), Error handling, and Cyber security.
+
+# Core Features  
+## 1. AI-Powered Test Matching (NLP Engine)
+- **What it does**: Automatically analyzes new requirements against existing test database to identify potential matches
+- **Why it's important**: Eliminates redundant test creation and ensures consistency by reusing proven test specifications
+- **How it works**: NLP engine processes requirement text and compares semantic similarity with existing tests in the database
+
+## 2. AI Test Draft Generation (LLM Engine)  
+- **What it does**: Generates standardized test specification drafts based on requirements and learned patterns from existing test database
+- **Why it's important**: Dramatically reduces initial test creation time and ensures adherence to company testing standards
+- **How it works**: LLM trained on company's test database understands testing patterns and generates structured test drafts following established formats
+
+## 3. Standardized Parameter Management System with Variants
+- **What it does**: Manages categorized parameters (Authentication, Engine Parameters, UDS_DID, CAN_Signals) with support for manufacturer-specific variants
+- **Why it's important**: Ensures consistency while supporting different automotive manufacturers' implementations (BMW, VW, Audi, etc.)
+- **How it works**: Hierarchical parameter system where engineers select from predefined categories, with each parameter potentially having multiple variant values for different manufacturers
+
+## 4. Generic Command Library
+- **What it does**: Provides reusable command templates with parameter placeholders (e.g., "Set level of authentication {Authentication}")
+- **Why it's important**: Standardizes test actions and reduces variability in test specification language
+- **How it works**: Template-based system where engineers select commands and populate placeholders with appropriate parameters
+
+## 5. Requirements Management System
+- **What it does**: Manages and categorizes requirements from various sources, supporting both document import and manual entry
+- **Why it's important**: Centralizes all requirements in a structured format, enabling effective AI matching and traceability
+- **How it works**: Import engine for various document formats plus manual entry interface, with categorization by functional areas (UDS, Communication, Error Handler, Cyber Security)
+
+## 6. Structured Test Specification Creation
+- **What it does**: Guides engineers through creating complete test specifications with all required attributes, linked to specific requirements
+- **Why it's important**: Ensures all tests meet company standards and maintain traceability to requirements
+- **How it works**: Form-based interface with validation for: Name, Description, Requirement (linked), Precondition, TestSteps, Postcondition, TestDataDescription
+
+# User Experience  
+## User Personas
+- **Primary**: Automotive Test Engineers with 3-10 years experience in requirements-based testing
+- **Technical Background**: Familiar with UDS, CAN/FlexRay protocols, automotive security standards
+- **Pain Points**: Time-consuming requirement analysis, inconsistent test formats, difficulty finding existing relevant tests
+
+## Key User Flows
+1. **Requirements Management Flow**:
+   - Engineer imports requirements from documents (Word, PDF, Excel) or adds manually
+   - System categorizes requirements by functional area (UDS, Communication, Error Handler, Cyber Security)
+   - Engineer reviews and validates imported requirements
+   - Requirements are stored with metadata and categorization
+
+2. **New Requirement Processing Flow**:
+   - Engineer selects a requirement from the requirements database
+   - NLP engine searches for similar existing tests
+   - System presents matching results with confidence scores
+   - Engineer decides to reuse, modify, or create new test
+
+3. **AI-Assisted Test Creation Flow**:
+   - Engineer initiates new test creation
+   - LLM generates draft based on requirement and historical patterns
+   - Engineer reviews and refines AI-generated draft
+   - Engineer selects appropriate Generic Commands and Parameters
+   - System identifies parameters used in test steps
+   - System populates TestDataDescription with parameters and default/available values
+   - System validates and saves completed test specification
+
+4. **Parameter and Command Management Flow**:
+   - Engineer accesses Parameter/Command libraries
+   - Creates new categories (e.g., "Authentication", "UDS Commands") as needed
+   - Creates parameters and assigns them to user-created categories
+   - Creates generic commands and assigns them to user-created categories
+   - Associates parameters with Generic Commands
+   - System maintains relationships and validates usage
+
+5. **Parameter Variant Management Flow** (Post-Test Creation):
+   - Engineer accesses Parameter Management interface
+   - Selects a parameter and clicks the "Variants" button
+   - Modal/panel opens for variant management
+   - Engineer adds manufacturer-specific values (e.g., BMW: 0x11,0x02 for UDS_SoftwareReset)
+   - System automatically updates TestDataDescription in all tests using that parameter
+   - Enables test reusability across different manufacturers
+
+## Professional UI/UX Design System
+
+### Design Philosophy
+TestSpecAI should provide a **delightful, professional experience** that makes complex automotive testing workflows feel intuitive and enjoyable. The interface should rival modern SaaS applications in polish while maintaining the technical depth required for engineering work.
+
+### Visual Design Language
+- **Modern Minimalism**: Clean, uncluttered interfaces with purposeful whitespace
+- **Professional Color Palette**: 
+  - Primary: Deep blue (#1890ff) for actions and navigation
+  - Secondary: Warm gray (#8c8c8c) for supporting elements  
+  - Success: Green (#52c41a) for completed states
+  - Warning: Orange (#faad14) for attention items
+  - Error: Red (#ff4d4f) for critical issues
+  - Background: Light gray (#fafafa) with white content areas
+- **Typography**: Inter font family for excellent readability and modern feel
+- **Elevation**: Subtle shadows and depth to create visual hierarchy
+- **Rounded Corners**: 8px border radius for modern, friendly appearance
+
+### Layout & Navigation
+- **Sidebar Navigation**: Persistent left sidebar with clear iconography
+  - Dashboard, Requirements, Test Specs, Parameters, AI Tools sections
+  - Collapsible for more workspace when needed
+  - Active state indicators and hover effects
+- **Header**: Clean top bar with breadcrumbs, search, and user context
+- **Content Areas**: Card-based layouts with proper spacing and visual grouping
+- **Responsive Design**: Adapts beautifully to different screen sizes
+
+### Interactive Components
+- **Data Tables**: 
+  - Sortable columns with clear visual indicators
+  - Inline editing capabilities where appropriate
+  - Row selection with bulk actions
+  - Advanced filtering with saved filter sets
+  - Pagination with "load more" options for large datasets
+- **Forms**:
+  - Multi-step wizards for complex workflows (test creation)
+  - Real-time validation with helpful error messages
+  - Auto-save functionality to prevent data loss
+  - Smart defaults and suggestions
+- **Modals & Panels**:
+  - Smooth animations and transitions
+  - Contextual actions and keyboard shortcuts
+  - Proper focus management for accessibility
+
+### Specialized UI Components
+- **Test Step Builder**: 
+  - Visual drag-and-drop interface with snap-to-grid
+  - Command palette for quick GenericCommand selection
+  - Parameter auto-completion with type-ahead search
+  - Visual indicators for required vs optional fields
+- **Requirements Coverage Visualization**:
+  - Interactive relationship mapping between tests and requirements
+  - Visual coverage indicators (covered/uncovered requirements)
+  - Filterable and searchable requirement trees
+- **AI Results Dashboard**:
+  - Confidence score visualizations with color coding
+  - Side-by-side comparison views for matching results
+  - Progressive disclosure of detailed matching information
+  - Clear accept/reject actions with undo capability
+- **Parameter Variant Management**:
+  - Tabbed interface for different manufacturers
+  - Inline editing with immediate preview
+  - Bulk import/export capabilities
+  - Visual diff showing changes across variants
+
+### Micro-Interactions & Feedback
+- **Loading States**: Skeleton screens and progress indicators
+- **Success Feedback**: Subtle animations and toast notifications
+- **Error Handling**: Contextual error messages with recovery suggestions
+- **Hover Effects**: Subtle feedback on interactive elements
+- **Keyboard Navigation**: Full keyboard accessibility with visible focus indicators
+
+### Performance & Responsiveness
+- **Perceived Performance**: Optimistic UI updates and skeleton loading
+- **Lazy Loading**: Progressive loading of large datasets
+- **Caching**: Smart caching of frequently accessed data
+- **Offline Capability**: Basic offline functionality for critical workflows
+
+### Accessibility Standards
+- **WCAG 2.1 AA Compliance**: Full accessibility support
+- **Keyboard Navigation**: Complete keyboard operability
+- **Screen Reader Support**: Proper ARIA labels and semantic HTML
+- **Color Contrast**: Meets or exceeds accessibility contrast ratios
+- **Focus Management**: Clear focus indicators and logical tab order
+
+### Mobile & Tablet Experience
+- **Responsive Breakpoints**: Optimized layouts for different screen sizes
+- **Touch-Friendly**: Appropriately sized touch targets (44px minimum)
+- **Gesture Support**: Swipe actions where appropriate
+- **Mobile-First Components**: Components designed for mobile, enhanced for desktop
+
+### User Experience Flows
+- **Onboarding**: Progressive disclosure of features with contextual help
+- **Search & Discovery**: Powerful search with filters, facets, and suggestions  
+- **Bulk Operations**: Efficient multi-select and batch actions
+- **Undo/Redo**: Comprehensive undo functionality for critical actions
+- **Contextual Help**: In-line help and tooltips without cluttering the interface
+
+### Technical Implementation
+- **Component Library**: Ant Design Pro as base, heavily customized for TestSpecAI branding
+- **Icons**: Ant Design icons supplemented with custom automotive-specific icons
+- **Animations**: Framer Motion for smooth, purposeful animations
+- **Theming**: CSS-in-JS with styled-components for consistent theming
+- **State Management**: Optimistic updates with proper error boundaries
+</context>
+<PRD>
+# Technical Architecture  
+
+## System Architecture Overview
+TestSpecAI follows a modern 3-tier architecture with clear separation of concerns:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Frontend Layer                                   │
+│              React + TypeScript + Ant Design + Zustand                     │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐│
+│  │ Requirements    │ │ Test Spec       │ │ Parameter &     │ │ AI Results  ││
+│  │ Management      │ │ Editor          │ │ Command Mgmt    │ │ Dashboard   ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │ HTTP/REST API
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                           Backend Layer                                    │
+│                       FastAPI + Python 3.11+                              │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐│
+│  │ Requirements    │ │ Test Spec       │ │ Parameter       │ │ Generic     ││
+│  │ Service         │ │ Service         │ │ Service         │ │ Command     ││
+│  │                 │ │                 │ │                 │ │ Service     ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘│
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐│
+│  │ NLP Service     │ │ LLM Service     │ │ Document        │ │ Variant     ││
+│  │ (Test Matching) │ │ (Test Gen)      │ │ Processing      │ │ Management  ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘│
+└─────────────────────────────────────────────────────────────────────────────┘
+                                    │ SQLAlchemy ORM
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                          Database Layer                                    │
+│  ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────┐│
+│  │ Requirements    │ │ Test Specs      │ │ Parameters      │ │ Generic     ││
+│  │ Table           │ │ Table           │ │ & Variants      │ │ Commands    ││
+│  │                 │ │                 │ │ Tables          │ │ Table       ││
+│  └─────────────────┘ └─────────────────┘ └─────────────────┘ └─────────────┘│
+│  ┌─────────────────┐ ┌─────────────────┐                                   │
+│  │ SQLite (dev)    │ │ pgvector        │     PostgreSQL (production)       │
+│  │ PostgreSQL      │ │ (embeddings)    │                                   │
+│  │ (production)    │ │                 │                                   │
+│  └─────────────────┘ └─────────────────┘                                   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+## System Components
+### Frontend (Web Application)
+- **Technology Stack**: 
+  - **Framework**: React.js 18+ with TypeScript
+  - **State Management**: Zustand (lightweight, perfect for TestSpecAI complexity)
+  - **UI Library**: Ant Design Pro (enterprise-ready with advanced components)
+  - **Styling**: styled-components with CSS-in-JS for theming
+  - **Animations**: Framer Motion for smooth, professional animations
+  - **Icons**: Ant Design icons + custom automotive icon set
+  - **Routing**: React Router v6 with protected routes
+  - **HTTP Client**: Axios with interceptors and optimistic updates
+  - **Form Management**: React Hook Form with Zod validation (TypeScript-first)
+  - **Rich Text Editor**: Monaco Editor for GenericCommand editing
+  - **Build Tool**: Vite (fast development and build)
+  - **Testing**: Vitest + React Testing Library for component testing
+- **Key Modules**:
+  - Requirements Management Interface
+  - Test Specification Editor with GenericCommand selection
+  - AI Matching Results Dashboard
+  - Parameter/Command Management Interface with Variants buttons
+  - Search and Filter Components with advanced filtering
+
+### Backend Services
+- **Technology Stack**:
+  - **Framework**: FastAPI (Python 3.11+)
+  - **Async Support**: Native async/await for AI processing
+  - **Validation**: Pydantic v2 (perfect for GenericCommand/Parameter validation)
+  - **ORM**: SQLAlchemy 2.0 with async support
+  - **File Processing**: python-multipart for uploads, python-docx, PyPDF2, openpyxl for parsing
+  - **AI Integration**: Hugging Face Transformers, sentence-transformers, local LLM API client
+  - **Background Tasks**: FastAPI BackgroundTasks for simple AI processing
+- **Services**:
+  - **API Layer**: RESTful API for all frontend interactions
+  - **Requirements Management Service**: Import, parsing, and categorization of requirements from various sources
+  - **NLP Service**: Semantic similarity engine for requirement-test matching
+  - **LLM Service**: Test draft generation engine trained on company data
+  - **Parameter Management Service**: CRUD operations for parameters, variants, and commands
+  - **Test Specification Service**: Core business logic for test creation and validation
+  - **Document Processing Service**: Handles import and parsing of various document formats (Word, PDF, Excel)
+
+### Database Layer
+- **Primary Database**: 
+  - **Development**: SQLite (simple, no setup required)
+  - **Production**: PostgreSQL 15+ (robust, supports JSON columns for TestDataDescription)
+  - **ORM**: SQLAlchemy 2.0 with async support and Alembic for migrations
+  - **Connection Pooling**: SQLAlchemy async pool
+  - **Migrations**: Alembic automated migrations
+- **Vector Database**: 
+  - **Technology**: pgvector extension for PostgreSQL (unified with main DB)
+  - **Development**: Simple in-memory similarity using sentence-transformers
+  - **Purpose**: Store embeddings for NLP similarity search
+  - **Indexing**: HNSW indexing for fast similarity queries
+- **File Storage**: 
+  - **Development**: Local filesystem storage
+  - **Production**: Local filesystem or simple cloud storage
+  - **Purpose**: Store requirement documents, test attachments
+  - **Security**: FastAPI file serving with authentication
+
+## Data Models
+### Requirement Model
+```
+Requirement:
+- id: unique identifier
+- title: string
+- description: text
+- content: text (full requirement text)
+- category: enum (UDS, Communication, ErrorHandler, CyberSecurity)
+- source: string (document name/manual entry)
+- importDate: timestamp
+- status: enum (active, deprecated, under_review)
+- metadata: object (additional properties like priority, version, etc.)
+- linkedTests: array of test specification references
+```
+
+### Test Specification Model
+```
+TestSpecification:
+- id: unique identifier
+- name: string
+- description: text
+- requirementIds: array of Requirement references (one test can cover multiple requirements)
+- precondition: text
+- testSteps: array of TestStep objects
+- postcondition: text
+- testDataDescription: object (parameter-variant pairs with resolved values)
+- functionalArea: enum (UDS, Communication, ErrorHandler, CyberSecurity)
+- createdBy: user reference
+- lastModified: timestamp
+```
+
+### TestStep Model
+```
+TestStep:
+- action: GenericCommand reference with populated parameters
+- expectedResult: GenericCommand reference with populated parameters
+- description: text (optional)
+- sequenceNumber: integer
+```
+
+### Parameter Model
+```
+Parameter:
+- id: unique identifier
+- name: string
+- categoryId: reference to ParameterCategory model
+- hasVariants: boolean
+- defaultValue: string (for parameters without variants)
+- variants: array of ParameterVariant objects
+- description: text
+- isActive: boolean
+```
+
+### ParameterCategory Model
+```
+ParameterCategory:
+- id: unique identifier
+- name: string (e.g., "Authentication", "Engine Parameters", "UDS_DID", "CAN_Signals")
+- description: text
+- createdBy: user reference
+- createdAt: timestamp
+- isActive: boolean
+```
+
+### ParameterVariant Model
+```
+ParameterVariant:
+- id: unique identifier
+- parameterId: reference to Parameter
+- manufacturer: string (BMW, VW, Audi, etc.)
+- value: string (e.g., "0x11,0x02")
+- description: text
+- isDefault: boolean
+```
+
+### GenericCommand Model
+```
+GenericCommand:
+- id: unique identifier
+- template: string (e.g., "Set level of authentication {Authentication}")
+- categoryId: reference to CommandCategory model
+- requiredParameters: array of parameter category references
+- description: text
+```
+
+### CommandCategory Model
+```
+CommandCategory:
+- id: unique identifier
+- name: string (e.g., "UDS", "CAN", "FlexRay", "Error Handling")
+- description: text
+- createdBy: user reference
+- createdAt: timestamp
+- isActive: boolean
+```
+
+## APIs and Integrations
+### API Design & Endpoints
+
+#### Base URL: `/api/v1`
+
+#### Requirements Management API
+```
+GET    /requirements            # List all requirements
+POST   /requirements            # Create new requirement
+GET    /requirements/{id}       # Get specific requirement
+PUT    /requirements/{id}       # Update requirement
+DELETE /requirements/{id}       # Delete requirement
+
+POST   /requirements/upload     # Upload document for parsing
+GET    /requirements/categories # Get requirement categories
+GET    /requirements/search     # Search requirements with filters
+```
+
+#### Test Specifications API
+```
+GET    /test-specs              # List all test specifications
+POST   /test-specs              # Create new test specification
+GET    /test-specs/{id}         # Get specific test specification
+PUT    /test-specs/{id}         # Update test specification
+DELETE /test-specs/{id}         # Delete test specification
+
+GET    /test-specs/{id}/steps   # Get test steps for specification
+POST   /test-specs/{id}/steps   # Add test step
+PUT    /test-specs/{id}/steps/{step_id}  # Update test step
+DELETE /test-specs/{id}/steps/{step_id} # Delete test step
+```
+
+#### Parameters & Variants API
+```
+GET    /parameters              # List all parameters
+POST   /parameters              # Create new parameter
+GET    /parameters/{id}         # Get specific parameter
+PUT    /parameters/{id}         # Update parameter
+DELETE /parameters/{id}         # Delete parameter
+
+GET    /parameters/categories   # List all parameter categories
+POST   /parameters/categories   # Create new parameter category
+PUT    /parameters/categories/{id}    # Update parameter category
+DELETE /parameters/categories/{id}    # Delete parameter category
+
+POST   /parameters/{id}/variants # Add variant to parameter
+PUT    /parameters/{id}/variants/{variant_id}  # Update variant
+DELETE /parameters/{id}/variants/{variant_id} # Delete variant
+```
+
+#### Generic Commands API
+```
+GET    /commands                # List all generic commands
+POST   /commands                # Create new generic command
+GET    /commands/{id}           # Get specific command
+PUT    /commands/{id}           # Update command
+DELETE /commands/{id}           # Delete command
+
+GET    /commands/categories     # List all command categories
+POST   /commands/categories     # Create new command category
+PUT    /commands/categories/{id}      # Update command category
+DELETE /commands/categories/{id}      # Delete command category
+
+GET    /commands/search         # Search commands with filters
+```
+
+#### AI Services API
+```
+POST   /ai/nlp/match           # Find matching tests for requirements
+POST   /ai/llm/generate        # Generate test specification draft
+GET    /ai/nlp/status/{job_id} # Get NLP matching status
+GET    /ai/llm/status/{job_id} # Get LLM generation status
+```
+
+#### Data Flow Examples
+
+##### 1. Creating a Test Specification
+```
+Frontend → Backend Flow:
+
+1. GET /requirements          # Load requirements list
+2. GET /commands             # Load available generic commands  
+3. GET /parameters           # Load available parameters
+4. POST /test-specs          # Create test specification
+   Body: {
+     "name": "UDS Software Reset Test",
+     "description": "Test UDS software reset functionality",
+     "requirement_ids": [123, 124, 125],  // One test can cover multiple requirements
+     "precondition": "ECU in default session",
+     "postcondition": "ECU restarted successfully"
+   }
+5. POST /test-specs/{id}/steps # Add test steps
+   Body: {
+     "sequence_number": 1,
+     "action": {
+       "command_id": 456,
+       "parameters": {"signal": "UDS_SoftwareReset"}
+     },
+     "expected_result": {
+       "command_id": 789,
+       "parameters": {"response": "UDS_Positive_SoftwareReset"}
+     },
+     "description": "Send software reset command"
+   }
+```
+
+##### 2. Parameter Variant Management
+```
+Frontend → Backend Flow:
+
+1. GET /parameters           # Load parameters list
+2. Click "Variants" button on UDS_SoftwareReset parameter
+3. GET /parameters/{id}      # Get parameter details with variants
+4. POST /parameters/{id}/variants # Add new variant
+   Body: {
+     "manufacturer": "BMW",
+     "value": "0x11,0x02",
+     "description": "BMW specific software reset command"
+   }
+5. Auto-update: Backend updates all test specifications using this parameter
+```
+
+##### 3. AI-Powered Test Matching
+```
+Frontend → Backend Flow:
+
+1. GET /requirements         # Load uncovered requirements
+2. POST /ai/nlp/match       # Request matching
+   Body: {
+     "requirement_ids": [123, 124, 125],
+     "similarity_threshold": 0.8
+   }
+3. GET /ai/nlp/status/{job_id} # Poll for results
+4. Display matching results with confidence scores
+5. User accepts/rejects matches
+```
+
+##### 4. Local LLM Test Generation
+```
+Frontend → Backend → Local LLM Server Flow:
+
+1. POST /ai/llm/generate    # Request test generation
+   Body: {
+     "requirement_id": 123,
+     "test_type": "UDS",
+     "use_generic_commands": true
+   }
+2. Backend → Local LLM Server: HTTP request with confidential data
+3. Local LLM processes request using fine-tuned model
+4. GET /ai/llm/status/{job_id} # Poll for completion
+5. Receive generated test draft with GenericCommands
+6. User reviews and edits draft
+7. POST /test-specs         # Save final test specification
+
+Note: All confidential test data never leaves local infrastructure
+```
+
+### AI Model Integrations
+- **NLP Model**: sentence-transformers based model for automotive domain similarity matching (cloud/local)
+- **Local LLM Model**: Self-hosted fine-tuned language model trained on confidential test specification corpus
+- **Model Training Pipeline**: Local training infrastructure for continuous learning from confidential test data
+- **Security**: All confidential data remains on local infrastructure, no external API calls for LLM operations
+
+## Infrastructure Requirements
+- **Development Environment**: 
+  - **Setup**: Native Python virtual environment + Node.js for frontend
+  - **IDE Setup**: VS Code with Python, React, TypeScript extensions
+  - **Database**: SQLite (no setup required)
+  - **Hot Reload**: Vite dev server (frontend) + FastAPI auto-reload (backend)
+  - **AI Development**: Local sentence-transformers models, local LLM server for testing
+- **Production Environment**: 
+  - **Platform**: Simple VPS or cloud instance (DigitalOcean, Linode, AWS EC2)
+  - **Web Server**: Nginx reverse proxy to FastAPI + static file serving
+  - **Database**: PostgreSQL with pgvector extension
+  - **Process Management**: systemd or PM2 for service management
+  - **SSL**: Let's Encrypt for HTTPS
+  - **Backup**: Simple database backup scripts with cron jobs
+- **AI Infrastructure**: 
+  - **NLP Models**: Hosted sentence-transformers models on application server
+  - **LLM Infrastructure**: Dedicated local PC/server for confidential data training and inference
+  - **Model Storage**: Local filesystem storage for fine-tuned models (confidential data protection)
+  - **Performance**: CPU-based NLP inference, GPU-based LLM inference on dedicated hardware
+
+- **Local LLM Infrastructure** (Dedicated PC/Server):
+  - **Hardware Requirements**: 
+    - GPU: NVIDIA RTX 4090 or Tesla V100 (minimum 24GB VRAM for training)
+    - CPU: High-core count (16+ cores) for data preprocessing
+    - RAM: 64GB+ for large model training
+    - Storage: 2TB+ SSD for model storage and training data
+  - **Software Stack**:
+    - **Base Model**: Llama 2/3, CodeLlama, or similar open-source LLM
+    - **Training Framework**: Hugging Face Transformers, LoRA/QLoRA for efficient fine-tuning
+    - **Inference Server**: Text Generation Inference (TGI) or vLLM for optimized serving
+    - **Model Management**: MLflow for model versioning and experiment tracking
+  - **Training Pipeline**:
+    - **Data Preparation**: Automated preprocessing of test specifications and requirements
+    - **Fine-tuning**: LoRA/QLoRA adaptation on automotive test domain
+    - **Evaluation**: Automated quality scoring of generated tests
+    - **Deployment**: Automated model deployment to inference server
+  - **Security**:
+    - **Network Isolation**: Dedicated network segment, no internet access during training
+    - **Data Encryption**: All training data encrypted at rest
+    - **Access Control**: Restricted physical and network access to LLM infrastructure
+
+## Project Structure
+
+### Backend Structure (FastAPI)
+```
+backend/
+├── app/
+│   ├── __init__.py
+│   ├── main.py                 # FastAPI app initialization
+│   ├── config.py               # Configuration settings
+│   ├── database.py             # Database connection setup
+│   ├── dependencies.py         # FastAPI dependencies
+│   │
+│   ├── api/                    # API endpoints
+│   │   ├── __init__.py
+│   │   ├── v1/
+│   │   │   ├── __init__.py
+│   │   │   ├── requirements.py # Requirements CRUD endpoints
+│   │   │   ├── test_specs.py   # Test specifications endpoints
+│   │   │   ├── parameters.py   # Parameters & variants endpoints
+│   │   │   ├── commands.py     # Generic commands endpoints
+│   │   │   └── ai.py          # AI services endpoints (NLP/LLM)
+│   │   └── deps.py            # API dependencies
+│   │
+│   ├── core/                   # Core business logic
+│   │   ├── __init__.py
+│   │   └── config.py          # Core configuration
+│   │
+│   ├── crud/                   # Database operations
+│   │   ├── __init__.py
+│   │   ├── base.py            # Base CRUD operations
+│   │   ├── requirements.py    # Requirements CRUD
+│   │   ├── test_specs.py      # Test specifications CRUD
+│   │   ├── parameters.py      # Parameters CRUD
+│   │   ├── commands.py        # Commands CRUD
+│   │   └── categories.py      # Parameter & Command categories CRUD
+│   │
+│   ├── models/                 # SQLAlchemy models
+│   │   ├── __init__.py
+│   │   ├── base.py            # Base model class
+│   │   ├── requirement.py     # Requirement model
+│   │   ├── test_spec.py       # Test specification model
+│   │   ├── parameter.py       # Parameter & variant models
+│   │   ├── command.py         # Generic command model
+│   │   └── category.py        # Parameter & Command category models
+│   │
+│   ├── schemas/                # Pydantic schemas
+│   │   ├── __init__.py
+│   │   ├── requirement.py     # Requirement schemas
+│   │   ├── test_spec.py       # Test specification schemas
+│   │   ├── parameter.py       # Parameter schemas
+│   │   └── command.py         # Command schemas
+│   │
+│   ├── services/               # Business logic services
+│   │   ├── __init__.py
+│   │   ├── requirements.py    # Requirements management
+│   │   ├── test_specs.py      # Test creation logic
+│   │   ├── parameters.py      # Parameter management
+│   │   ├── nlp.py            # NLP matching service
+│   │   ├── llm.py            # Local LLM generation service
+│   │   └── document_parser.py # Document processing
+│   │
+│   └── utils/                  # Utility functions
+│       ├── __init__.py
+│       ├── file_handler.py    # File upload/download
+│       └── validators.py      # Custom validators
+│
+├── alembic/                    # Database migrations
+│   ├── versions/
+│   ├── env.py
+│   └── script.py.mako
+│
+├── tests/                      # Test files
+│   ├── __init__.py
+│   ├── conftest.py
+│   ├── test_requirements.py
+│   ├── test_test_specs.py
+│   └── test_parameters.py
+│
+├── requirements.txt            # Python dependencies
+├── .env.example               # Environment variables template
+└── alembic.ini                # Alembic configuration
+```
+
+### Frontend Structure (React + TypeScript)
+```
+frontend/
+├── public/
+│   ├── index.html
+│   └── favicon.ico
+│
+├── src/
+│   ├── main.tsx               # App entry point
+│   ├── App.tsx                # Main App component
+│   ├── vite-env.d.ts         # Vite type definitions
+│   │
+│   ├── components/            # Reusable components
+│   │   ├── common/
+│   │   │   ├── Layout.tsx
+│   │   │   ├── Header.tsx
+│   │   │   ├── Sidebar.tsx
+│   │   │   ├── Loading.tsx
+│   │   │   ├── DataTable.tsx
+│   │   │   ├── ConfidenceScore.tsx
+│   │   │   └── ProgressIndicator.tsx
+│   │   │
+│   │   ├── requirements/
+│   │   │   ├── RequirementsList.tsx
+│   │   │   ├── RequirementForm.tsx
+│   │   │   └── DocumentUpload.tsx
+│   │   │
+│   │   ├── test-specs/
+│   │   │   ├── TestSpecEditor.tsx
+│   │   │   ├── TestStepBuilder.tsx
+│   │   │   ├── GenericCommandSelector.tsx
+│   │   │   ├── TestSpecList.tsx
+│   │   │   ├── RequirementSelector.tsx
+│   │   │   └── CoverageVisualization.tsx
+│   │   │
+│   │   ├── parameters/
+│   │   │   ├── ParameterManager.tsx
+│   │   │   ├── ParameterForm.tsx
+│   │   │   ├── VariantModal.tsx
+│   │   │   └── CommandManager.tsx
+│   │   │
+│   │   └── ai/
+│   │       ├── MatchingResults.tsx
+│   │       ├── LLMGeneration.tsx
+│   │       └── AIProgress.tsx
+│   │
+│   ├── pages/                 # Page components
+│   │   ├── Dashboard.tsx
+│   │   ├── Requirements.tsx
+│   │   ├── TestSpecs.tsx
+│   │   ├── Parameters.tsx
+│   │   └── Login.tsx
+│   │
+│   ├── hooks/                 # Custom React hooks
+│   │   ├── useRequirements.ts
+│   │   ├── useTestSpecs.ts
+│   │   ├── useParameters.ts
+│   │   └── useAPI.ts
+│   │
+│   ├── services/              # API service functions
+│   │   ├── api.ts            # Axios configuration
+│   │   ├── requirements.ts    # Requirements API calls
+│   │   ├── testSpecs.ts      # Test specs API calls
+│   │   ├── parameters.ts     # Parameters API calls
+│   │   └── commands.ts       # Generic Commands API calls
+│   │
+│   ├── store/                 # Zustand stores
+│   │   ├── requirementsStore.ts
+│   │   ├── testSpecsStore.ts
+│   │   ├── parametersStore.ts
+│   │   └── commandsStore.ts
+│   │
+│   ├── types/                 # TypeScript type definitions
+│   │   ├── requirement.ts
+│   │   ├── testSpec.ts
+│   │   ├── parameter.ts
+│   │   ├── command.ts
+│   │   └── api.ts
+│   │
+│   ├── utils/                 # Utility functions
+│   │   ├── constants.ts
+│   │   ├── helpers.ts
+│   │   └── validators.ts
+│   │
+│   ├── styles/                # Styling system
+│   │   ├── theme.ts           # Design system theme
+│   │   ├── globals.css        # Global styles
+│   │   └── components/        # Component-specific styles
+│   │
+│   └── assets/                # Static assets
+│       ├── icons/             # Custom automotive icons
+│       ├── images/            # Images and illustrations
+│       └── fonts/             # Inter font family
+│
+├── package.json
+├── tsconfig.json
+├── vite.config.ts
+└── .env.example
+```
+
+# Development Roadmap  
+## Phase 1: Core Foundation (MVP)
+**Scope**: Basic requirements and test specification management without AI features
+- Requirements management system with manual entry and basic document import
+- User interface for manual test specification creation
+- Complete requirement and test specification data models implementation
+- Basic parameter and generic command management
+- Simple search and filter functionality for both requirements and tests
+- Database setup with initial schema
+- Basic CRUD operations for all entities
+- Traceability linking between requirements and test specifications
+
+**Deliverable**: Functional web application where test engineers can manage requirements, manually create test specifications linked to requirements, and use the standardized format with parameters and generic commands.
+
+## Phase 2: Advanced Requirements & Document Processing
+**Scope**: Enhanced requirements management with document processing capabilities
+- Advanced document import engine (Word, PDF, Excel parsing)
+- Automatic requirement categorization and extraction
+- Bulk requirements import and validation
+- Requirements versioning and change tracking
+- Advanced search and filtering for requirements
+- Requirements export and reporting functionality
+
+**Deliverable**: Robust requirements management system that can efficiently process various document formats and maintain comprehensive requirement databases.
+
+## Phase 3: Parameter & Command System with Variants
+**Scope**: Advanced parameter and generic command functionality with manufacturer variant support
+- Complete parameter categorization system (Authentication, Engine Parameters, UDS_DID, CAN_Signals)
+- Parameter variant system supporting multiple manufacturers (BMW, VW, Audi, etc.)
+- Generic command library with placeholder system
+- Parameter-command association logic
+- Advanced test step builder with drag-and-drop functionality
+- Parameter variant management system for post-test standardization
+- Automatic TestDataDescription updates when variants are added to parameters
+- Validation system for parameter usage in commands
+- Import/export functionality for parameters, variants, and commands
+
+**Deliverable**: Fully standardized test creation system where engineers use predefined parameters with manufacturer-specific variants and commands to build consistent, manufacturer-adaptable test specifications.
+
+## Phase 4: AI Integration - NLP Matching
+**Scope**: Intelligent test matching system
+- NLP model development and training infrastructure
+- Vector database setup for similarity search
+- Requirement analysis and embedding generation
+- Test matching algorithm with confidence scoring
+- Matching results dashboard and comparison interface
+- Feedback system for improving matching accuracy
+
+**Deliverable**: AI-powered system that automatically identifies existing tests similar to new requirements, significantly reducing duplicate test creation.
+
+## Phase 5: AI Integration - LLM Test Generation
+**Scope**: Automated test draft generation
+- LLM model fine-tuning on company test corpus
+- Test generation service integration
+- Draft review and editing interface
+- Learning system that improves from user modifications
+- Template management for different test types
+- Quality scoring for generated tests
+
+**Deliverable**: AI assistant that generates initial test specification drafts, reducing manual test creation time by 60-80%.
+
+## Phase 6: Advanced Features & Optimization
+**Scope**: Production-ready enhancements
+- Advanced analytics and reporting
+- Bulk operations and batch processing
+- Advanced search with semantic capabilities
+- User preference and customization options
+- Performance optimization and caching
+- Comprehensive audit logging
+
+**Deliverable**: Enterprise-ready application with advanced features supporting efficient workflows for all 20-30 users.
+
+# Logical Dependency Chain
+## Foundation First (Phase 1)
+- Database schema for both requirements and test specifications must be established first
+- Requirements management provides the foundation for all AI matching capabilities
+- Basic CRUD operations and traceability linking enable all subsequent feature development
+- User interface framework supports both requirements and test specification workflows
+
+## Requirements Processing Before AI (Phase 2 before 4&5)
+- Advanced document processing capabilities must be in place before AI can effectively process large requirement datasets
+- Requirements categorization and validation systems provide clean data for AI training
+- Bulk import capabilities enable building substantial requirement databases needed for AI effectiveness
+
+## Standardization Before AI (Phase 3 before 4&5)
+- Parameter and command systems must be complete before AI can leverage them effectively
+- Standardized test format is required for effective AI training and generation
+- Generic command system provides the vocabulary for AI-generated tests
+
+## NLP Before LLM (Phase 4 before 5)
+- Requirements and test database must be populated before LLM training
+- NLP matching provides data quality feedback for LLM training corpus
+- Understanding user matching preferences informs LLM generation patterns
+
+## Parallel AI Development
+- NLP and LLM models can be developed in parallel once foundation and standardization are ready
+- Both systems benefit from the same underlying requirements and test databases
+- Training pipelines can be established simultaneously
+
+## Incremental User Value
+- Each phase delivers immediate value to test engineers
+- Early phases reduce manual work even without AI
+- Requirements management alone provides significant workflow improvements
+- AI phases multiply the efficiency gains from standardization and requirements management
+- Final phase optimizes the complete workflow
+
+
+# Risks and Mitigations  
+## Technical Challenges
+**Risk**: AI model accuracy for automotive domain specificity
+- **Mitigation**: Start with smaller, focused datasets; implement continuous learning; maintain human oversight and feedback loops
+
+**Risk**: NLP matching producing false positives/negatives
+- **Mitigation**: Implement confidence scoring; provide manual override options; continuous model refinement based on user feedback
+
+**Risk**: Database performance with large test corpus
+- **Mitigation**: Implement proper indexing; use caching strategies; optimize queries; consider database sharding if needed
+
+## MVP Definition and Scope
+**Risk**: Feature creep leading to delayed MVP delivery
+- **Mitigation**: Strictly define Phase 1 scope; resist adding AI features to MVP; focus on core test management functionality first
+
+**Risk**: Document parsing accuracy for various formats and quality
+- **Mitigation**: Implement multiple parsing engines; provide manual validation steps; support incremental import improvements
+
+**Risk**: Over-engineering the parameter/command system
+- **Mitigation**: Start with basic categories; expand based on user feedback; implement iterative improvements
+
+## Resource and Timeline Constraints
+**Risk**: AI model development taking longer than expected
+- **Mitigation**: Plan AI features for later phases; ensure core application provides value without AI; consider using pre-trained models as starting point
+
+**Risk**: Limited training data for AI models initially
+- **Mitigation**: Design system to work with small datasets; implement data collection strategies; plan for gradual model improvement
+
+# Appendix  
+## Research Findings
+- Automotive testing standards require strict traceability between requirements and tests
+- Test engineers spend 40-60% of time on administrative tasks rather than actual test design
+- Standardization reduces test maintenance overhead by approximately 50%
+- AI-assisted test generation in similar domains shows 70-80% time reduction in initial draft creation
+
+## Technical Specifications
+### Functional Area Categories
+1. **UDS Testing**: Unified Diagnostic Services protocol testing
+2. **Communication**: CAN and FlexRay protocol validation
+3. **Error Handler**: System error detection and response testing  
+4. **Cyber Security**: Automotive security protocol validation
+
+### Parameter Categories Examples (User-Created)
+Users can create custom categories and parameters as needed:
+
+- **Authentication Category** (created by user): 
+  - Security_LVL1 parameter (BMW: 0x01, VW: 0x02, Audi: 0x01)
+  - Security_LVL2, Security_LVL3 parameters
+- **Engine Parameters Category** (created by user): 
+  - Threshold_Coolant_Temp, Max_RPM, Idle_Speed parameters
+- **UDS_DID Category** (created by user): 
+  - Data Identifier codes for diagnostic communication
+- **CAN_Signals Category** (created by user): 
+  - Signal names and identifiers for CAN protocol testing
+- **UDS Commands Category** (created by user):
+  - UDS_SoftwareReset parameter (BMW: 0x11,0x02, VW: 0x11,0x05)
+  - UDS_Default_Session, UDS_Positive_Default parameters
+
+### Generic Command Categories Examples (User-Created)
+- **UDS Category** (created by user): Commands for UDS protocol testing
+- **CAN Category** (created by user): Commands for CAN communication
+- **FlexRay Category** (created by user): Commands for FlexRay protocol
+- **Error Handling Category** (created by user): Commands for error simulation and handling
+
+### Performance Requirements
+- Support 30 concurrent users
+- Sub-second response time for search operations
+- AI matching results within 5 seconds
+- Test draft generation within 10 seconds
+- 99.5% uptime requirement
+</PRD>

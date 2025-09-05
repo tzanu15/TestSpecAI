@@ -1,0 +1,27 @@
+# Task ID: 12
+# Title: Implement Local LLM Service for Test Generation
+# Status: pending
+# Dependencies: 3, 5, 7
+# Priority: medium
+# Description: Develop the LLM service for generating test specification drafts based on requirements.
+# Details:
+1. Create llm.py service
+2. Set up connection to local LLM server
+3. Implement prompt engineering for test generation
+4. Create test template system based on test types
+5. Implement background processing for generation tasks
+6. Create API endpoints for LLM generation and status checking
+7. Implement result validation and post-processing
+8. Add feedback mechanism for improving generation quality
+
+Technology recommendations:
+- Hugging Face Transformers 4.30.0+ for model integration
+- Text Generation Inference (TGI) or vLLM for optimized serving
+- CodeLlama-7b or Llama-2-13b as base models
+- LoRA/QLoRA for fine-tuning on automotive test domain
+- FastAPI BackgroundTasks for asynchronous processing
+- Implement proper error handling for model failures
+- Use structured output format for generated tests
+
+# Test Strategy:
+Create test requirements with known expected test specifications. Verify that the LLM service generates reasonable test drafts. Test with various requirement types. Verify that background processing works correctly. Test error handling with malformed requirements.

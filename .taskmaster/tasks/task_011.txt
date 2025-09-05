@@ -1,0 +1,27 @@
+# Task ID: 11
+# Title: Implement NLP Service for Test Matching
+# Status: pending
+# Dependencies: 3, 5, 6
+# Priority: medium
+# Description: Develop the NLP service for matching requirements with existing tests using semantic similarity.
+# Details:
+1. Create nlp.py service
+2. Implement sentence-transformers integration for embedding generation
+3. Set up vector storage using pgvector extension
+4. Implement similarity search algorithm
+5. Create confidence scoring mechanism
+6. Implement background processing for large matching operations
+7. Create API endpoints for NLP matching and status checking
+8. Implement caching for frequently matched requirements
+
+Technology recommendations:
+- sentence-transformers 2.2.2+ for embedding generation
+- all-MiniLM-L6-v2 or all-mpnet-base-v2 as base models
+- pgvector extension for PostgreSQL for vector storage
+- HNSW indexing for fast similarity search
+- FastAPI BackgroundTasks for asynchronous processing
+- Use cosine similarity for matching
+- Implement threshold-based filtering for matches
+
+# Test Strategy:
+Create test dataset with known similar requirements. Verify that the NLP service correctly identifies similar tests. Test with various similarity thresholds. Verify that background processing works correctly. Test performance with large datasets.

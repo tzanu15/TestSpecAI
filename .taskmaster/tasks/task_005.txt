@@ -1,0 +1,25 @@
+# Task ID: 5
+# Title: Implement CRUD Operations for Core Entities
+# Status: pending
+# Dependencies: 3
+# Priority: high
+# Description: Develop CRUD (Create, Read, Update, Delete) operations for all core entities using SQLAlchemy.
+# Details:
+1. Create base CRUD class with common operations
+2. Implement Requirements CRUD operations
+3. Implement TestSpecification CRUD operations
+4. Implement Parameter and ParameterVariant CRUD operations
+5. Implement GenericCommand CRUD operations
+6. Implement Category CRUD operations for both parameters and commands
+7. Add filtering, sorting, and pagination support
+8. Implement transaction management for complex operations
+
+Technology recommendations:
+- SQLAlchemy 2.0+ with async query API
+- Use SQLAlchemy select() for queries
+- Implement pagination using limit() and offset()
+- Use SQLAlchemy's with_for_update() for locking when needed
+- Leverage SQLAlchemy's session.begin() for transaction management
+
+# Test Strategy:
+Write unit tests for all CRUD operations. Test filtering, sorting, and pagination. Verify transaction rollback on errors. Test concurrent operations to ensure data integrity.
