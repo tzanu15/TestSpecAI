@@ -14,6 +14,14 @@ sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 from app.database import get_database_url
 from app.models.base import Base
 
+# Import all models to ensure they are registered with Base.metadata
+from app.models import (
+    RequirementCategory, ParameterCategory, CommandCategory,
+    Requirement, Parameter, ParameterVariant, GenericCommand,
+    TestSpecification, TestStep, FunctionalArea,
+    test_requirement_association, command_parameter_association
+)
+
 def get_sync_database_url() -> str:
     """Get synchronous database URL for Alembic migrations."""
     from app.config import settings
