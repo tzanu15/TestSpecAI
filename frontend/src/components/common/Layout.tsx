@@ -1,5 +1,5 @@
 import { Layout as AntLayout } from 'antd'
-import React, { useState, useEffect } from 'react'
+import React, { useEffect, useState } from 'react'
 import { Header } from './Header'
 import { Sidebar } from './Sidebar'
 
@@ -22,7 +22,7 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
 
     checkIsMobile()
     window.addEventListener('resize', checkIsMobile)
-    
+
     return () => window.removeEventListener('resize', checkIsMobile)
   }, [])
 

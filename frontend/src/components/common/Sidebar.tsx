@@ -1,8 +1,8 @@
 import {
-  ApiOutlined,
-  DashboardOutlined,
-  FileTextOutlined,
-  SettingOutlined,
+    ApiOutlined,
+    DashboardOutlined,
+    FileTextOutlined,
+    SettingOutlined,
 } from '@ant-design/icons'
 import { Menu, Spin } from 'antd'
 import React, { useState } from 'react'
@@ -74,11 +74,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ collapsed }) => {
         {collapsed ? 'TS' : 'TestSpecAI'}
       </div>
               {loading ? (
-          <div style={{ 
-            display: 'flex', 
-            justifyContent: 'center', 
-            alignItems: 'center', 
-            height: '200px' 
+          <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '200px'
           }}>
             <Spin size="small" />
           </div>

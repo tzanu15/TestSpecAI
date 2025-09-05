@@ -1,10 +1,10 @@
 import { Spin } from 'antd'
+import { AnimatePresence } from 'framer-motion'
 import { Suspense, lazy } from 'react'
 import { Route, Routes, useLocation } from 'react-router-dom'
-import { AnimatePresence } from 'framer-motion'
 import { Layout } from './components/common/Layout'
-import { ProtectedRoute } from './components/common/ProtectedRoute'
 import { PageTransition } from './components/common/PageTransition'
+import { ProtectedRoute } from './components/common/ProtectedRoute'
 
 // Lazy load page components
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(module => ({ default: module.DashboardPage })))
@@ -17,7 +17,7 @@ const NotFoundPage = lazy(() => import('./pages/NotFoundPage').then(module => ({
 
 function App() {
   const location = useLocation()
-  
+
   return (
     <Layout>
       <Suspense
