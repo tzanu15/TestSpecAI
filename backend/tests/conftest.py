@@ -6,13 +6,15 @@ including database setup, test client, and common test data.
 """
 
 import pytest
+import pytest_asyncio
 import asyncio
+import os
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from httpx import AsyncClient
+from httpx import AsyncClient, ASGITransport
 from app.main import app
 from app.database import get_db
-from app.models.base import Base
+from app.models import Base
 
 # Test database URL
 TEST_DATABASE_URL = "sqlite+aiosqlite:///./test.db"
@@ -30,31 +32,49 @@ def event_loop():
     loop.close()
 
 
-@pytest.fixture(scope="function")
+@pytest_asyncio.fixture(scope="function")
 async def db_session():
     """Create a fresh database session for each test."""
+    import uuid
+    import time
+
+    # Create unique database name for each test
+    test_db_name = f"./test_{uuid.uuid4().hex[:8]}_{int(time.time())}.db"
+    test_db_url = f"sqlite+aiosqlite:///{test_db_name}"
+
+    # Create test engine with unique database
+    test_engine_local = create_async_engine(test_db_url, echo=False)
+    TestSessionLocal_local = sessionmaker(test_engine_local, class_=AsyncSession, expire_on_commit=False)
+
     # Create tables
-    async with test_engine.begin() as conn:
+    async with test_engine_local.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
     # Create session
-    async with TestSessionLocal() as session:
+    async with TestSessionLocal_local() as session:
         yield session
 
-    # Drop tables
-    async with test_engine.begin() as conn:
-        await conn.run_sync(Base.metadata.drop_all)
+    # Dispose engine to release all connections
+    await test_engine_local.dispose()
+
+    # Clean up - remove test database
+    try:
+        if os.path.exists(test_db_name):
+            os.remove(test_db_name)
+    except PermissionError:
+        # Database file is still locked on Windows, skip cleanup
+        pass
 
 
-@pytest.fixture(scope="function")
-async def client(db_session):
+@pytest_asyncio.fixture(scope="function")
+async def client(db_session: AsyncSession):
     """Create test client with database session override."""
     def override_get_db():
-        yield db_session
+        return db_session
 
     app.dependency_overrides[get_db] = override_get_db
 
-    async with AsyncClient(app=app, base_url="http://test") as ac:
+    async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
     app.dependency_overrides.clear()

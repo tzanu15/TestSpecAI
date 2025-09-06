@@ -337,8 +337,8 @@ async def test_get_parameter_categories(client: AsyncClient, db_session: AsyncSe
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["name"] == "Test Category"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["name"] == "Test Category"
 
 
 @pytest.mark.asyncio
@@ -421,9 +421,9 @@ async def test_get_parameter_variants(client: AsyncClient, db_session: AsyncSess
 
     assert response.status_code == 200
     data = response.json()
-    assert len(data) == 1
-    assert data[0]["manufacturer"] == "BMW"
-    assert data[0]["value"] == "Level 1"
+    assert len(data["items"]) == 1
+    assert data["items"][0]["manufacturer"] == "BMW"
+    assert data["items"][0]["value"] == "Level 1"
 
 
 @pytest.mark.asyncio

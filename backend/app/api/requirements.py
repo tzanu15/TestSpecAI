@@ -275,9 +275,10 @@ async def get_requirement_categories(
         result = []
         for category in categories:
             count = await requirement.count_by_category(db, category_id=str(category.id))
-            category_dict = category.__dict__.copy()
-            category_dict['requirements_count'] = count
-            result.append(RequirementCategoryResponse(**category_dict))
+            # Use model_validate to properly serialize SQLAlchemy model
+            category_data = RequirementCategoryResponse.model_validate(category)
+            category_data.requirements_count = count
+            result.append(category_data)
 
         return result
 
@@ -339,10 +340,11 @@ async def get_requirement_category(
 
         # Add requirements count
         count = await requirement.count_by_category(db, category_id=str(category_id))
-        category_dict = category_obj.__dict__.copy()
-        category_dict['requirements_count'] = count
+        # Use model_validate to properly serialize SQLAlchemy model
+        category_data = RequirementCategoryResponse.model_validate(category_obj)
+        category_data.requirements_count = count
 
-        return RequirementCategoryResponse(**category_dict)
+        return category_data
 
     except HTTPException:
         raise
@@ -382,10 +384,11 @@ async def update_requirement_category(
 
         # Add requirements count
         count = await requirement.count_by_category(db, category_id=str(category_id))
-        category_dict = updated_category.__dict__.copy()
-        category_dict['requirements_count'] = count
+        # Use model_validate to properly serialize SQLAlchemy model
+        category_data = RequirementCategoryResponse.model_validate(updated_category)
+        category_data.requirements_count = count
 
-        return RequirementCategoryResponse(**category_dict)
+        return category_data
 
     except HTTPException:
         raise

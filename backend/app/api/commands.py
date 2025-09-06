@@ -6,7 +6,7 @@ and command-parameter relationships with proper validation, error handling, and 
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.crud.command import generic_command
@@ -154,7 +154,7 @@ async def get_commands(
         raise HTTPException(status_code=500, detail="Internal server error while retrieving commands")
 
 
-@router.post("/", response_model=GenericCommandResponse)
+@router.post("/", response_model=GenericCommandResponse, status_code=status.HTTP_201_CREATED)
 async def create_command(
     *,
     db: AsyncSession = Depends(get_db),
@@ -444,7 +444,7 @@ async def get_command_categories(
         raise HTTPException(status_code=500, detail="Internal server error while retrieving command categories")
 
 
-@router.post("/categories/", response_model=CommandCategoryResponse)
+@router.post("/categories/", response_model=CommandCategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_command_category(
     *,
     db: AsyncSession = Depends(get_db),

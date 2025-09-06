@@ -6,7 +6,7 @@ and parameter variants with proper validation, error handling, and documentation
 """
 
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, Query, Path
+from fastapi import APIRouter, Depends, HTTPException, Query, Path, status
 from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.crud.parameter import parameter, parameter_variant
@@ -179,7 +179,7 @@ async def get_parameters(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.post("/", response_model=ParameterResponse)
+@router.post("/", response_model=ParameterResponse, status_code=status.HTTP_201_CREATED)
 async def create_parameter(
     *,
     db: AsyncSession = Depends(get_db),
@@ -484,7 +484,7 @@ async def get_parameter_categories(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.post("/categories/", response_model=ParameterCategoryResponse)
+@router.post("/categories/", response_model=ParameterCategoryResponse, status_code=status.HTTP_201_CREATED)
 async def create_parameter_category(
     *,
     db: AsyncSession = Depends(get_db),
@@ -694,7 +694,7 @@ async def get_parameter_variants(
         raise HTTPException(status_code=500, detail="Internal server error")
 
 
-@router.post("/{parameter_id}/variants/", response_model=ParameterVariantResponse)
+@router.post("/{parameter_id}/variants/", response_model=ParameterVariantResponse, status_code=status.HTTP_201_CREATED)
 async def create_parameter_variant(
     *,
     db: AsyncSession = Depends(get_db),

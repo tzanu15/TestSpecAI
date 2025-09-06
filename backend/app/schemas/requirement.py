@@ -21,7 +21,8 @@ class RequirementBase(BaseModel):
         "from_attributes": True,
         "validate_assignment": True,
         "str_strip_whitespace": True,
-        "extra": "forbid"
+        "extra": "forbid",
+        "populate_by_name": True
     }
 
     title: str = Field(
@@ -51,6 +52,8 @@ class RequirementBase(BaseModel):
     )
     metadata: Optional[Dict[str, Any]] = Field(
         default_factory=dict,
+        alias="metadata_json",
+        serialization_alias="metadata",
         description="Additional metadata for the requirement",
         examples=[{"priority": "high", "version": "1.0", "reviewer": "john.doe@example.com"}]
     )
@@ -162,6 +165,8 @@ class RequirementUpdate(BaseUpdateSchema):
     )
     metadata: Optional[Dict[str, Any]] = Field(
         None,
+        alias="metadata_json",
+        serialization_alias="metadata",
         description="Additional metadata for the requirement",
         examples=[{"priority": "high", "version": "1.0", "reviewer": "john.doe@example.com"}]
     )
