@@ -244,11 +244,6 @@ class RequirementResponse(RequirementBase, BaseResponseSchema):
         description="Number of test specifications associated with this requirement",
         examples=[0, 1, 5, 10]
     )
-    category_name: Optional[str] = Field(
-        None,
-        description="Name of the requirement category",
-        examples=["UDS Requirements", "Communication Requirements", "Security Requirements"]
-    )
 
 
 class RequirementListResponse(BaseModel):

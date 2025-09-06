@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { requirementsService } from '../services/requirements'
 import { useRequirementsStore } from '../stores/requirementsStore'
 import { RequirementCreate, RequirementUpdate } from '../types/requirements'
@@ -7,16 +7,7 @@ export const useRequirements = () => {
   const store = useRequirementsStore()
   const [isInitialized, setIsInitialized] = useState(false)
 
-  // Load requirements on mount
-  useEffect(() => {
-    if (!isInitialized) {
-      loadRequirements()
-      loadCategories()
-      setIsInitialized(true)
-    }
-  }, [isInitialized])
-
-  const loadRequirements = async () => {
+  const loadRequirements = useCallback(async () => {
     try {
       store.setLoading(true)
       store.setError(null)
@@ -31,7 +22,25 @@ export const useRequirements = () => {
     } finally {
       store.setLoading(false)
     }
-  }
+  }, []) // Remove store dependency
+
+  const loadCategories = useCallback(async () => {
+    try {
+      const categories = await requirementsService.getCategories()
+      store.setCategories(categories)
+    } catch (error) {
+      console.error('Failed to load categories:', error)
+    }
+  }, []) // Remove store dependency
+
+  // Load requirements on mount
+  useEffect(() => {
+    if (!isInitialized) {
+      loadRequirements()
+      loadCategories()
+      setIsInitialized(true)
+    }
+  }, [isInitialized]) // Remove function dependencies
 
   const createRequirement = async (data: RequirementCreate) => {
     try {
@@ -80,15 +89,6 @@ export const useRequirements = () => {
       throw error
     } finally {
       store.setLoading(false)
-    }
-  }
-
-  const loadCategories = async () => {
-    try {
-      const categories = await requirementsService.getCategories()
-      store.setCategories(categories)
-    } catch (error) {
-      console.error('Failed to load categories:', error)
     }
   }
 

@@ -1,3 +1,4 @@
+import { PaginatedResponse } from '../types/api'
 import {
     Requirement,
     RequirementCategory,
@@ -13,7 +14,8 @@ export class RequirementsService {
     category_id?: string
     search?: string
   }): Promise<Requirement[]> {
-    return apiService.get<Requirement[]>('/requirements', params)
+    const response = await apiService.get<PaginatedResponse<Requirement>>('/requirements', params)
+    return response.items
   }
 
   async getRequirement(id: string): Promise<Requirement> {
@@ -36,7 +38,7 @@ export class RequirementsService {
   }
 
   async getCategories(): Promise<RequirementCategory[]> {
-    return apiService.get<RequirementCategory[]>('/requirements/categories')
+    return apiService.get<RequirementCategory[]>('/requirements/categories/')
   }
 }
 

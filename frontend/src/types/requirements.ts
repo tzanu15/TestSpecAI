@@ -25,5 +25,6 @@ export interface RequirementUpdate {
   title?: string
   description?: string
   category_id?: string
+  is_active?: boolean
   metadata?: Record<string, any>
 }

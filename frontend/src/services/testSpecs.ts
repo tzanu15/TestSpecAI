@@ -1,7 +1,7 @@
 import {
-    TestSpecification,
-    TestSpecificationCreate,
-    TestSpecificationUpdate,
+  TestSpecification,
+  TestSpecificationCreate,
+  TestSpecificationUpdate,
 } from '../types/testSpecs'
 import { apiService } from './api'
 
@@ -12,7 +12,8 @@ export class TestSpecsService {
     functional_area?: string
     search?: string
   }): Promise<TestSpecification[]> {
-    return apiService.get<TestSpecification[]>('/test-specifications', params)
+    const response = await apiService.get<{ items: TestSpecification[]; total: number; page: number; per_page: number; total_pages: number }>('/test-specifications', params)
+    return response.items
   }
 
   async getTestSpecification(id: string): Promise<TestSpecification> {

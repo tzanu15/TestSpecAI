@@ -230,6 +230,51 @@ class CRUDTestSpecification(CRUDBase[TestSpecification, TestSpecificationCreate,
             logger.error(f"Error counting test specifications by functional area {functional_area}: {str(e)}")
             raise
 
+    async def get_multi_with_relationships(
+        self,
+        db: AsyncSession,
+        *,
+        skip: int = 0,
+        limit: int = 100,
+        functional_area: Optional[FunctionalArea] = None,
+        search: Optional[str] = None
+    ) -> List[TestSpecification]:
+        """
+        Get multiple test specifications with relationships loaded.
+
+        Args:
+            db: Database session
+            skip: Number of records to skip
+            limit: Maximum number of records to return
+            functional_area: Optional functional area filter
+            search: Optional search term for name
+
+        Returns:
+            List of test specifications with relationships loaded
+        """
+        try:
+            query = select(TestSpecification).options(
+                selectinload(TestSpecification.requirements),
+                selectinload(TestSpecification.test_steps)
+            ).where(TestSpecification.is_active == True)
+
+            # Apply functional area filter
+            if functional_area:
+                query = query.where(TestSpecification.functional_area == functional_area)
+
+            # Apply search filter
+            if search:
+                query = query.where(TestSpecification.name.ilike(f"%{search}%"))
+
+            # Apply ordering and pagination
+            query = query.order_by(TestSpecification.created_at.desc()).offset(skip).limit(limit)
+
+            result = await db.execute(query)
+            return result.scalars().all()
+        except Exception as e:
+            logger.error(f"Error getting test specifications with relationships: {str(e)}")
+            raise
+
     async def get_test_specifications_without_requirements(
         self,
         db: AsyncSession,

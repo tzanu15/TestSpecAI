@@ -47,17 +47,10 @@ async def get_test_specifications(
     - **search**: Search term for name and description (case-insensitive)
     """
     try:
-        # Determine which query method to use based on filters
-        if functional_area:
-            test_specs = await test_specification.get_by_functional_area(
-                db, functional_area=functional_area, skip=skip, limit=limit
-            )
-        elif search:
-            test_specs = await test_specification.search_by_name(
-                db, name=search, skip=skip, limit=limit
-            )
-        else:
-            test_specs = await test_specification.get_multi(db, skip=skip, limit=limit)
+        # Get test specifications with relationships loaded
+        test_specs = await test_specification.get_multi_with_relationships(
+            db, skip=skip, limit=limit, functional_area=functional_area, search=search
+        )
 
         # Get total count for pagination
         total = await test_specification.count(db)
@@ -75,13 +68,23 @@ async def get_test_specifications(
             # Get test steps count
             test_steps_count = len(spec.test_steps) if spec.test_steps else 0
 
-            # Create response object
-            spec_dict = spec.__dict__.copy()
-            spec_dict['requirements_count'] = requirements_count
-            spec_dict['test_steps_count'] = test_steps_count
-            spec_dict['requirement_ids'] = [str(req.id) for req in spec.requirements] if spec.requirements else []
-
-            result_items.append(TestSpecificationResponse(**spec_dict))
+            # Create response object with only the fields we need
+            result_items.append(TestSpecificationResponse(
+                id=spec.id,
+                name=spec.name,
+                description=spec.description,
+                precondition=spec.precondition,
+                postcondition=spec.postcondition,
+                test_data_description=spec.test_data_description,
+                functional_area=spec.functional_area,
+                created_at=spec.created_at,
+                updated_at=spec.updated_at,
+                created_by=spec.created_by,
+                is_active=spec.is_active,
+                requirements_count=requirements_count,
+                test_steps_count=test_steps_count,
+                requirement_ids=[str(req.id) for req in spec.requirements] if spec.requirements else []
+            ))
 
         return TestSpecificationListResponse(
             items=result_items,
