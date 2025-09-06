@@ -5,6 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import init_db, close_db, health_check
+from app.api import requirements, test_specs, parameters, commands
 
 # Create FastAPI application
 app = FastAPI(
@@ -22,6 +23,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Include routers
+app.include_router(requirements.router, prefix="/api/v1/requirements", tags=["requirements"])
+app.include_router(test_specs.router, prefix="/api/v1/test-specifications", tags=["test-specifications"])
+app.include_router(parameters.router, prefix="/api/v1/parameters", tags=["parameters"])
+app.include_router(commands.router, prefix="/api/v1/commands", tags=["commands"])
 
 
 @app.get("/")

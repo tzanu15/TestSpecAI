@@ -72,6 +72,19 @@ from .command import (
     GenericCommandListResponse
 )
 
+from .category import (
+    CategoryBase,
+    RequirementCategoryCreate,
+    RequirementCategoryUpdate,
+    RequirementCategoryResponse,
+    ParameterCategoryCreate,
+    ParameterCategoryUpdate,
+    ParameterCategoryResponse,
+    CommandCategoryCreate,
+    CommandCategoryUpdate,
+    CommandCategoryResponse
+)
+
 __all__ = [
     # Base schemas
     "BaseSchema",
@@ -132,5 +145,17 @@ __all__ = [
     "GenericCommandCreate",
     "GenericCommandUpdate",
     "GenericCommandResponse",
-    "GenericCommandListResponse"
+    "GenericCommandListResponse",
+
+    # Category schemas
+    "CategoryBase",
+    "RequirementCategoryCreate",
+    "RequirementCategoryUpdate",
+    "RequirementCategoryResponse",
+    "ParameterCategoryCreate",
+    "ParameterCategoryUpdate",
+    "ParameterCategoryResponse",
+    "CommandCategoryCreate",
+    "CommandCategoryUpdate",
+    "CommandCategoryResponse"
 ]

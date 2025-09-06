@@ -4,7 +4,7 @@ Transaction management utilities for CRUD operations.
 from typing import Any, Dict, List, Optional, Union, Callable, TypeVar, Generic
 from sqlalchemy.ext.asyncio import AsyncSession, AsyncTransaction
 from sqlalchemy import select, update, delete, text
-from sqlalchemy.orm import with_for_update
+# with_for_update is a method on select objects in SQLAlchemy 2.0
 from sqlalchemy.exc import IntegrityError, SQLAlchemyError
 from contextlib import asynccontextmanager
 import asyncio

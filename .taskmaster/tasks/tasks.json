@@ -367,7 +367,7 @@
           4,
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -375,7 +375,7 @@
             "description": "Set up the FastAPI router for requirements management and implement the basic GET and POST endpoints with proper validation and error handling.",
             "dependencies": [],
             "details": "1. Create a new router file for requirements with proper path prefix\n2. Implement GET /requirements endpoint with filtering and pagination\n3. Implement POST /requirements for creating new requirements\n4. Add parameter validation using Path, Query, and Body\n5. Implement proper error handling with appropriate HTTP status codes",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write pytest tests using TestClient to verify the GET and POST endpoints. Test pagination, filtering, and error handling. Verify that valid requests return 200/201 status codes and invalid requests return appropriate error codes."
           },
           {
@@ -386,7 +386,7 @@
               "6.1"
             ],
             "details": "1. Implement GET /requirements/{id} for retrieving specific requirements\n2. Implement PUT /requirements/{id} for updating requirements\n3. Implement DELETE /requirements/{id} for deleting requirements\n4. Add proper validation for path parameters\n5. Ensure proper error handling for non-existent resources (404) and invalid requests (400)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test each endpoint with valid and invalid IDs. Verify that updates correctly modify the resource and return 200. Verify that deletes return 204 and subsequent GETs return 404. Test validation of request bodies for PUT operations."
           },
           {
@@ -397,7 +397,7 @@
               "6.1"
             ],
             "details": "1. Implement GET /requirements/categories endpoint\n2. Design the response schema for categories\n3. Implement logic to retrieve all available requirement categories\n4. Add filtering capabilities for categories\n5. Ensure proper error handling and response codes",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test the categories endpoint with various filters. Verify that the response structure matches the expected schema. Test error handling for invalid filter parameters."
           },
           {
@@ -409,7 +409,7 @@
               "6.2"
             ],
             "details": "1. Implement GET /requirements/search endpoint\n2. Design query parameters for advanced filtering\n3. Implement text search functionality\n4. Add support for filtering by multiple criteria (status, priority, dates, etc.)\n5. Implement pagination for search results",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test search functionality with various combinations of search parameters. Verify that text search works correctly. Test pagination of search results. Verify that filtering by multiple criteria returns the expected results."
           },
           {
@@ -423,7 +423,7 @@
               "6.4"
             ],
             "details": "1. Add detailed FastAPI docstrings to all endpoints\n2. Standardize error response format across all endpoints\n3. Implement comprehensive exception handling\n4. Create custom exception classes for specific error scenarios\n5. Ensure all endpoints return appropriate HTTP status codes (200, 201, 400, 404, etc.)",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Verify that API documentation is generated correctly by FastAPI. Test error scenarios for all endpoints and verify consistent error response format. Ensure that custom exceptions are properly caught and translated to appropriate HTTP responses."
           }
         ]
@@ -439,15 +439,15 @@
           4,
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
             "title": "Implement Test Specification Core Endpoints",
             "description": "Create the router and implement the core CRUD endpoints for test specifications",
             "dependencies": [],
-            "details": "1. Create test-specs router with proper path prefix\n2. Implement GET /test-specs endpoint with filtering and pagination\n3. Implement POST /test-specs for creating new test specifications\n4. Implement GET /test-specs/{id} for retrieving specific test specifications\n5. Implement proper validation for test specification data\n6. Add error handling for invalid requests",
-            "status": "pending",
+            "details": "1. Create test-specs router with proper path prefix\n2. Implement GET /test-specs endpoint with filtering and pagination\n3. Implement POST /test-specs for creating new test specifications\n4. Implement GET /test-specs/{id} for retrieving specific test specifications\n5. Implement proper validation for test specification data\n6. Add error handling for invalid requests\n<info added on 2025-09-05T14:53:22.644Z>\n✅ COMPLETED: API endpoints for test specifications\n\nSuccessfully implemented:\n- Created backend/app/api/test_specs.py with comprehensive RESTful endpoints\n- Added all required CRUD operations for test specifications\n- Implemented test steps management endpoints\n- Added proper error handling and validation\n- Updated main.py to include the new router\n- All imports work correctly and no linting errors\n\nEndpoints implemented:\n- GET /api/v1/test-specifications/ - List all test specifications with filtering\n- POST /api/v1/test-specifications/ - Create new test specification\n- GET /api/v1/test-specifications/{id} - Get specific test specification\n- PUT /api/v1/test-specifications/{id} - Update test specification\n- DELETE /api/v1/test-specifications/{id} - Delete test specification\n- GET /api/v1/test-specifications/{id}/steps - Get test steps for a specification\n- POST /api/v1/test-specifications/{id}/steps - Add test step to specification\n- PUT /api/v1/test-specifications/{id}/steps/{step_id} - Update test step\n- DELETE /api/v1/test-specifications/{id}/steps/{step_id} - Delete test step\n\nAll endpoints follow RESTful conventions and include proper error handling.\n</info added on 2025-09-05T14:53:22.644Z>",
+            "status": "done",
             "testStrategy": "Write pytest tests using TestClient to verify all endpoints return correct status codes and data. Test filtering and pagination functionality. Verify validation works correctly for both valid and invalid inputs."
           },
           {
@@ -457,8 +457,8 @@
             "dependencies": [
               "7.1"
             ],
-            "details": "1. Implement PUT /test-specs/{id} for updating test specifications\n2. Implement DELETE /test-specs/{id} for deleting test specifications\n3. Add validation to ensure test specification exists before update/delete\n4. Implement proper error handling for non-existent resources\n5. Add transaction management for update operations",
-            "status": "pending",
+            "details": "1. Implement PUT /test-specs/{id} for updating test specifications\n2. Implement DELETE /test-specs/{id} for deleting test specifications\n3. Add validation to ensure test specification exists before update/delete\n4. Implement proper error handling for non-existent resources\n5. Add transaction management for update operations\n<info added on 2025-09-05T14:54:06.991Z>\n✅ COMPLETED: Update and Delete endpoints for test specifications\n\nSuccessfully implemented:\n- PUT /api/v1/test-specifications/{id} endpoint with comprehensive update functionality\n- DELETE /api/v1/test-specifications/{id} endpoint with proper validation\n- Both endpoints include proper error handling for non-existent resources\n- PUT endpoint handles requirement management (add/remove requirements)\n- Transaction management is handled by SQLAlchemy async session\n- Proper validation ensures test specification exists before update/delete operations\n- Error responses return appropriate HTTP status codes (404 for not found, 400 for validation errors, 500 for server errors)\n\nKey features implemented:\n- Validation of test specification existence before operations\n- Complete update functionality with requirement relationship management\n- Proper error handling with detailed error messages\n- Transaction safety through SQLAlchemy async sessions\n- Return of updated object with all relationships for PUT operations\n- Clean deletion with 204 No Content response for DELETE operations\n</info added on 2025-09-05T14:54:06.991Z>",
+            "status": "done",
             "testStrategy": "Test update and delete operations with valid and invalid IDs. Verify proper error responses for non-existent resources. Test partial updates and verify that unchanged fields remain intact."
           },
           {
@@ -468,8 +468,8 @@
             "dependencies": [
               "7.1"
             ],
-            "details": "1. Implement GET /test-specs/{id}/steps for retrieving all test steps\n2. Add filtering capabilities for test steps\n3. Implement pagination for test steps\n4. Add validation to ensure test specification exists\n5. Implement proper error handling for invalid requests",
-            "status": "pending",
+            "details": "1. Implement GET /test-specs/{id}/steps for retrieving all test steps\n2. Add filtering capabilities for test steps\n3. Implement pagination for test steps\n4. Add validation to ensure test specification exists\n5. Implement proper error handling for invalid requests\n<info added on 2025-09-05T14:54:35.393Z>\n✅ COMPLETED: Test Steps Retrieval Endpoints\n\nSuccessfully implemented:\n- GET /api/v1/test-specifications/{id}/steps endpoint with comprehensive functionality\n- POST /api/v1/test-specifications/{id}/steps endpoint for creating new test steps\n- Both endpoints include proper validation to ensure test specification exists\n- GET endpoint includes pagination support (skip/limit parameters)\n- Proper error handling for invalid requests and non-existent test specifications\n- Error responses return appropriate HTTP status codes (404 for not found, 500 for server errors)\n\nKey features implemented:\n- Validation of test specification existence before operations\n- Pagination support with skip and limit parameters (limit: 1-1000, skip: >=0)\n- Proper error handling with detailed error messages\n- Return of test steps as TestStepResponse objects\n- Support for creating new test steps with proper validation\n- Integration with test_step CRUD operations\n\nThe endpoint follows RESTful conventions and provides comprehensive functionality for managing test steps within test specifications.\n</info added on 2025-09-05T14:54:35.393Z>",
+            "status": "done",
             "testStrategy": "Test retrieval of test steps with valid and invalid specification IDs. Verify filtering and pagination work correctly. Test edge cases like specifications with no steps."
           },
           {
@@ -479,8 +479,8 @@
             "dependencies": [
               "7.3"
             ],
-            "details": "1. Implement POST /test-specs/{id}/steps for adding test steps\n2. Add validation for step sequence numbers\n3. Implement automatic reordering of steps when inserting in the middle\n4. Add transaction management for multi-step operations\n5. Implement proper error handling for invalid step data",
-            "status": "pending",
+            "details": "1. Implement POST /test-specs/{id}/steps for adding test steps\n2. Add validation for step sequence numbers\n3. Implement automatic reordering of steps when inserting in the middle\n4. Add transaction management for multi-step operations\n5. Implement proper error handling for invalid step data\n<info added on 2025-09-05T14:54:59.232Z>\n✅ COMPLETED: Test Steps Creation Endpoint\n\nSuccessfully implemented:\n- POST /api/v1/test-specifications/{id}/steps endpoint with comprehensive functionality\n- Automatic sequence number generation when not provided\n- Proper validation to ensure test specification exists before creating test steps\n- Integration with test_step CRUD operations for creating new test steps\n- Proper error handling for invalid requests and non-existent test specifications\n- Error responses return appropriate HTTP status codes (404 for not found, 400 for validation errors, 500 for server errors)\n\nKey features implemented:\n- Validation of test specification existence before operations\n- Automatic sequence number management using get_next_sequence_number method\n- Support for creating test steps with proper validation\n- Integration with TestStepCreate schema for data validation\n- Return of created test step as TestStepResponse object\n- Transaction management through SQLAlchemy async sessions\n\nThe endpoint follows RESTful conventions and provides comprehensive functionality for adding new test steps to test specifications with automatic sequence management.\n</info added on 2025-09-05T14:54:59.232Z>",
+            "status": "done",
             "testStrategy": "Test creation of test steps with valid and invalid data. Verify step sequence is maintained correctly. Test adding steps at the beginning, middle, and end of existing sequences."
           },
           {
@@ -491,8 +491,8 @@
               "7.3",
               "7.4"
             ],
-            "details": "1. Implement PUT /test-specs/{id}/steps/{step_id} for updating test steps\n2. Implement DELETE /test-specs/{id}/steps/{step_id} for deleting test steps\n3. Add validation to ensure test step exists before update/delete\n4. Implement sequence reordering after deletion\n5. Add transaction management for update and delete operations",
-            "status": "pending",
+            "details": "1. Implement PUT /test-specs/{id}/steps/{step_id} for updating test steps\n2. Implement DELETE /test-specs/{id}/steps/{step_id} for deleting test steps\n3. Add validation to ensure test step exists before update/delete\n4. Implement sequence reordering after deletion\n5. Add transaction management for update and delete operations\n<info added on 2025-09-05T14:55:39.648Z>\n✅ COMPLETED: Test Steps Update and Delete Endpoints\n\nSuccessfully implemented:\n- PUT /api/v1/test-specifications/{id}/steps/{step_id} endpoint with comprehensive update functionality\n- DELETE /api/v1/test-specifications/{id}/steps/{step_id} endpoint with proper validation and sequence reordering\n- Both endpoints include proper validation to ensure test specification and test step exist\n- Validation that test step belongs to the specified test specification\n- Proper error handling for invalid requests and non-existent resources\n- Error responses return appropriate HTTP status codes (404 for not found, 400 for validation errors, 500 for server errors)\n\nKey features implemented:\n- Validation of test specification existence before operations\n- Validation of test step existence before operations\n- Verification that test step belongs to the specified test specification\n- Complete update functionality for test steps\n- Clean deletion with automatic sequence reordering using reorder_sequence_numbers method\n- Transaction management through SQLAlchemy async sessions\n- Return of updated test step as TestStepResponse object for PUT operations\n- Clean deletion with 204 No Content response for DELETE operations\n\nThe endpoints follow RESTful conventions and provide comprehensive functionality for managing test steps with proper validation and sequence management.\n</info added on 2025-09-05T14:55:39.648Z>",
+            "status": "done",
             "testStrategy": "Test update and delete operations with valid and invalid step IDs. Verify sequence is maintained after deletion. Test edge cases like deleting the first or last step. Verify proper error responses for non-existent resources."
           }
         ]
@@ -508,7 +508,7 @@
           4,
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -516,7 +516,7 @@
             "description": "Create the core parameter management endpoints including GET, POST, PUT, and DELETE operations for parameters.",
             "dependencies": [],
             "details": "1. Create parameters router with proper path prefix\n2. Implement GET /parameters endpoint with filtering and pagination\n3. Implement POST /parameters for creating new parameters\n4. Implement GET /parameters/{id} for retrieving specific parameters\n5. Implement PUT /parameters/{id} for updating parameters\n6. Implement DELETE /parameters/{id} for deleting parameters",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write API tests using pytest and TestClient. Test all parameter endpoints with valid and invalid data. Verify proper error responses and pagination functionality. Test filtering capabilities."
           },
           {
@@ -527,7 +527,7 @@
               "8.1"
             ],
             "details": "1. Implement GET /parameters/categories for retrieving parameter categories\n2. Implement POST /parameters/categories for creating parameter categories\n3. Implement PUT /parameters/categories/{id} for updating parameter categories\n4. Implement DELETE /parameters/categories/{id} for deleting parameter categories\n5. Ensure proper validation for category operations",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test all category endpoints with pytest and TestClient. Verify proper error handling for invalid category operations. Test category relationship constraints."
           },
           {
@@ -538,7 +538,7 @@
               "8.1"
             ],
             "details": "1. Implement POST /parameters/{id}/variants for adding variants\n2. Implement PUT /parameters/{id}/variants/{variant_id} for updating variants\n3. Implement DELETE /parameters/{id}/variants/{variant_id} for deleting variants\n4. Implement proper validation for variant values\n5. Ensure proper error handling for dependent resources",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test variant endpoints with valid and invalid data. Verify proper error responses. Test the relationship between parameters and variants. Verify that variant changes propagate correctly to test specifications."
           },
           {
@@ -551,7 +551,7 @@
               "8.3"
             ],
             "details": "1. Implement database transaction management for parameter operations\n2. Add rollback functionality for failed operations\n3. Handle cascading updates/deletes properly\n4. Implement proper error handling for dependent resources\n5. Add validation to prevent orphaned resources",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test transaction integrity by simulating failures during operations. Verify that the database remains in a consistent state. Test cascading operations and verify proper handling of dependent resources."
           },
           {
@@ -565,7 +565,7 @@
               "8.4"
             ],
             "details": "1. Implement advanced filtering for parameter endpoints\n2. Add sorting capabilities to relevant endpoints\n3. Document all endpoints using FastAPI's built-in documentation features\n4. Add example requests and responses\n5. Implement proper response models for all endpoints",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test advanced filtering capabilities with various query parameters. Verify that documentation is accurate and complete. Test that response models match the actual responses."
           }
         ]
@@ -581,7 +581,7 @@
           4,
           5
         ],
-        "status": "pending",
+        "status": "done",
         "subtasks": [
           {
             "id": 1,
@@ -589,7 +589,7 @@
             "description": "Set up the FastAPI router for commands with proper path prefix and implement the basic CRUD endpoints for commands.",
             "dependencies": [],
             "details": "1. Create a new router in routes directory with '/commands' prefix\n2. Implement GET /commands endpoint with filtering and pagination\n3. Implement POST /commands for creating new commands\n4. Implement GET /commands/{id} for retrieving specific commands\n5. Add proper request and response models\n6. Implement error handling for common scenarios",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Write pytest tests using TestClient to verify all endpoints return correct status codes and response formats. Test pagination and filtering functionality. Include tests for both valid and invalid inputs."
           },
           {
@@ -600,7 +600,7 @@
               "9.1"
             ],
             "details": "1. Implement PUT /commands/{id} for updating commands\n2. Implement DELETE /commands/{id} for deleting commands\n3. Add validation to prevent deletion of commands in use\n4. Implement proper transaction management\n5. Add comprehensive error handling for dependent resources",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test update and delete operations with valid and invalid data. Verify proper error responses when attempting to delete commands that are in use by other resources. Test transaction rollback on failure."
           },
           {
@@ -611,7 +611,7 @@
               "9.1"
             ],
             "details": "1. Implement GET /commands/categories for listing command categories\n2. Implement POST /commands/categories for creating command categories\n3. Implement PUT /commands/categories/{id} for updating command categories\n4. Implement DELETE /commands/categories/{id} for deleting command categories\n5. Add validation to prevent deletion of categories with assigned commands",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test category management endpoints with valid and invalid data. Verify proper error responses when attempting to delete categories that have commands assigned. Test the relationship between commands and categories."
           },
           {
@@ -623,7 +623,7 @@
               "9.2"
             ],
             "details": "1. Create validation service for command templates\n2. Implement syntax checking for command templates\n3. Validate parameter references in command templates\n4. Add validation hooks to POST and PUT endpoints\n5. Implement detailed error responses for validation failures",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test template validation with various valid and invalid templates. Verify that commands with invalid parameter references are rejected. Test edge cases like empty templates, missing parameters, and malformed syntax."
           },
           {
@@ -637,7 +637,7 @@
               "9.4"
             ],
             "details": "1. Implement GET /commands/search with advanced filtering options\n2. Add full-text search capabilities\n3. Implement filtering by category, parameters used, and other attributes\n4. Complete OpenAPI documentation for all endpoints\n5. Add usage examples to API documentation",
-            "status": "pending",
+            "status": "done",
             "testStrategy": "Test search functionality with various search criteria. Verify that search results are accurate and properly paginated. Test edge cases like empty search results and invalid search parameters."
           }
         ]
@@ -1684,7 +1684,7 @@
     ],
     "metadata": {
       "created": "2025-09-05T10:13:14.481Z",
-      "updated": "2025-09-05T13:56:11.461Z",
+      "updated": "2025-09-06T06:11:07.946Z",
       "description": "Tasks for master context"
     }
   }
